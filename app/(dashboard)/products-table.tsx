@@ -5,7 +5,8 @@ import {
   TableRow,
   TableHeader,
   TableBody,
-  Table
+  Table,
+  TableCell
 } from '@/components/ui/table';
 import {
   Card,
@@ -15,23 +16,65 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
-import { Product } from './product';
-import { SelectProduct } from '@/lib/db';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { homestay } from 'generated/prisma';
+import { CreateHomestayModal } from './create-homestay-modal';
+import { EditHomestayModal } from './edit-homestay-modal';
 
-export function ProductsTable({
-  products,
-  offset,
-  totalProducts
+
+interface Homestay extends homestay {
+  admin_users: {
+    id: number;
+    name: string;
+    email: string;
+  }
+}
+
+export function HomestaysTable({
+  offset = 0,
+  productsPerPage = 5
 }: {
-  products: SelectProduct[];
-  offset: number;
-  totalProducts: number;
+  offset?: number;
+  productsPerPage?: number;
 }) {
   let router = useRouter();
-  let productsPerPage = 5;
+  const [homestays, setHomestays] = useState<Homestay[]>([]);
+  const [totalHomestays, setTotalHomestays] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+
+  const getStatus = (status: string) => {
+    if (status === 'active') return 'Active';
+    if (status === 'inactive') return 'Inactive';
+    if (status === 'pending') return 'Pending';
+    if (status === 'deleted') return 'Deleted';
+    return 'Unknown';
+  }
+
+  const getColorStatus = (status: string) => {
+    if (status === 'active') return 'bg-green-500';
+    if (status === 'inactive') return 'bg-red-500';
+    if (status === 'pending') return 'bg-yellow-500';
+    if (status === 'deleted') return 'bg-gray-500';
+    return 'bg-gray-500';
+  }
+
+  const fetchHomestays = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/homestay');
+      const data = await response.json();
+      setHomestays(data);
+      setTotalHomestays(data.length);
+    } catch (error) {
+      console.error('Error loading homestays:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   function prevPage() {
     router.back();
@@ -41,48 +84,76 @@ export function ProductsTable({
     router.push(`/?offset=${offset}`, { scroll: false });
   }
 
+  useEffect(() => {
+    fetchHomestays();
+  }, []);
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Products</CardTitle>
-        <CardDescription>
-          Manage your products and view their sales performance.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Homestays</CardTitle>
+          <CardDescription>
+            Manage your homestays and view their information.
+          </CardDescription>
+        </div>
+        <CreateHomestayModal onSuccess={fetchHomestays} />
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="hidden w-[100px] sm:table-cell">
-                <span className="sr-only">Image</span>
-              </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Price</TableHead>
-              <TableHead className="hidden md:table-cell">
-                Total Sales
-              </TableHead>
-              <TableHead className="hidden md:table-cell">Created at</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products.map((product) => (
-              <Product key={product.id} product={product} />
-            ))}
-          </TableBody>
-        </Table>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <p>Loading...</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Homestay Owner</TableHead>
+                <TableHead>Homestay Owner Email</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden md:table-cell">Price</TableHead>
+                <TableHead className="hidden md:table-cell">Guests</TableHead>
+                <TableHead className="hidden md:table-cell">Date</TableHead>
+                <TableHead>
+                Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {homestays.map((homestay) => (
+                <TableRow key={homestay.id}>
+                  <TableCell>{homestay.user_id}</TableCell>
+                  <TableCell>{homestay.admin_users.name}</TableCell>
+                  <TableCell>{homestay.admin_users.email}</TableCell>
+                  <TableCell>{homestay.title}</TableCell>
+                  <TableCell>{homestay.location}</TableCell>
+                  <TableCell>
+                    <span className={`p-1 rounded-md text-white ${getColorStatus(homestay.status)}`}>{getStatus(homestay.status)}</span>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">IDR {String(homestay.base_price)}</TableCell>
+                  <TableCell className="hidden md:table-cell">{homestay.max_guests}</TableCell>
+                  <TableCell className="hidden md:table-cell">{new Date(homestay.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <EditHomestayModal homestay={homestay} onSuccess={fetchHomestays} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
       <CardFooter>
         <form className="flex items-center w-full justify-between">
           <div className="text-xs text-muted-foreground">
             Showing{' '}
             <strong>
-              {Math.max(0, Math.min(offset - productsPerPage, totalProducts) + 1)}-{offset}
+              {homestays.length > 0 ? 1 : 0}-{Math.min(homestays.length, totalHomestays)}
             </strong>{' '}
-            of <strong>{totalProducts}</strong> products
+            of <strong>{totalHomestays}</strong> homestays
           </div>
           <div className="flex">
             <Button
@@ -93,14 +164,14 @@ export function ProductsTable({
               disabled={offset === productsPerPage}
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
-              Prev
+              Previous
             </Button>
             <Button
               formAction={nextPage}
               variant="ghost"
               size="sm"
               type="submit"
-              disabled={offset + productsPerPage > totalProducts}
+              disabled={offset + productsPerPage > totalHomestays}
             >
               Next
               <ChevronRight className="ml-2 h-4 w-4" />

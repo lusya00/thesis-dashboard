@@ -2,6 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "pnpm install && prisma generate",
     "build": "next build",
     "start": "next start"
   },

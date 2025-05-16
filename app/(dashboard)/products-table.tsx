@@ -110,10 +110,10 @@ export function HomestaysTable({
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
-                <TableHead>Homestay Owner</TableHead>
-                <TableHead>Homestay Owner Email</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Location</TableHead>
+                <TableHead>Homestay Owner</TableHead>
+                <TableHead>Homestay Owner Email</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Price</TableHead>
                 <TableHead className="hidden md:table-cell">Guests</TableHead>
@@ -126,11 +126,11 @@ export function HomestaysTable({
             <TableBody>
               {homestays.map((homestay) => (
                 <TableRow key={homestay.id}>
-                  <TableCell>{homestay.user_id}</TableCell>
-                  <TableCell>{homestay.admin_users.name}</TableCell>
-                  <TableCell>{homestay.admin_users.email}</TableCell>
+                  <TableCell>{homestay.id}</TableCell>
                   <TableCell>{homestay.title}</TableCell>
                   <TableCell>{homestay.location}</TableCell>
+                  <TableCell>{homestay.admin_users.name}</TableCell>
+                  <TableCell>{homestay.admin_users.email}</TableCell>
                   <TableCell>
                     <span className={`p-1 rounded-md text-white ${getColorStatus(homestay.status)}`}>{getStatus(homestay.status)}</span>
                   </TableCell>

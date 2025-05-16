@@ -322,7 +322,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/marcelosurco/Documents/GIPE 2025/untung-jawa-admin-dashboard/generated/prisma",
+      "value": "D:\\repos\\untung-jawa-admin-dashboard\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -331,12 +331,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "windows",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/marcelosurco/Documents/GIPE 2025/untung-jawa-admin-dashboard/prisma/schema.prisma",
+    "sourceFilePath": "D:\\repos\\untung-jawa-admin-dashboard\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

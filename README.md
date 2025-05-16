@@ -18,7 +18,7 @@ This is a starter template using the following stack:
 - Database - [Postgres](https://vercel.com/postgres)
 - Deployment - [Vercel](https://vercel.com/docs/concepts/next.js/overview)
 - Styling - [Tailwind CSS](https://tailwindcss.com)
-- Components - [Shadcn UI](https://ui.shadcn.com/)
+- Components - [Shadcn UI](https://ui.shadcn.com/) 
 - Analytics - [Vercel Analytics](https://vercel.com/analytics)
 - Formatting - [Prettier](https://prettier.io)
 

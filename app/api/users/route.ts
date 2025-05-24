@@ -1,3 +1,4 @@
+import { hashPassword } from '@/lib/password';
 import { prisma } from '@/lib/db';
 import { user_role } from 'generated/prisma';
 import { NextRequest, NextResponse } from 'next/server';
@@ -17,19 +18,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(users);
 }
 
-// POST - Create new user 
 export async function POST(request: NextRequest) {
     const body = await request.json();
     
-    if (!body.username || !body.email || !body.name) {
+    if (!body.username || !body.password || !body.email || !body.name) {
         return NextResponse.json(
-            { error: 'Username, email, and name are required' },
+            { error: 'Username, password, email, and name are required' },
             { status: 400 }
         );
     }
 
-    const allowedRole = [user_role.homestay_owner, user_role.activity_manager].includes(body.role)
-        ? body.role
+    // Hash password
+    const hashedPassword = await hashPassword(body.password);
+
+    // Validasi role
+    const allowedRoles = [user_role.homestay_owner, user_role.activity_manager];
+    const role = allowedRoles.includes(body.role) 
+        ? body.role 
         : user_role.homestay_owner; 
 
     const newUser = await prisma.admin_users.create({
@@ -37,16 +42,16 @@ export async function POST(request: NextRequest) {
             username: body.username,
             email: body.email,
             name: body.name,
-            password: body.password, 
-            role: allowedRole,
-            is_active: true 
+            password: hashedPassword,
+            role: role,
+            is_active: true
         }
     });
 
-    return NextResponse.json(newUser);
+    const { password: _, ...userData } = newUser;
+    return NextResponse.json(userData, { status: 201 });
 }
 
-// PUT - Update user 
 export async function PUT(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('id');
@@ -84,7 +89,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(updatedUser);
 }
 
-// DELETE User
 export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('id');
@@ -110,17 +114,12 @@ export async function DELETE(request: NextRequest) {
     } catch (error) {
         console.error('DELETE Error:', error);
         
-        // Solusi 1: Type Guard
         if (error instanceof Error && 'code' in error && error.code === 'P2025') {
             return NextResponse.json(
                 { error: 'User not found' },
                 { status: 404 }
             );
         }
-
-        // Solusi 2: Type Assertion (alternatif)
-        // const prismaError = error as { code?: string };
-        // if (prismaError.code === 'P2025') { ... }
 
         return NextResponse.json(
             { error: 'Internal server error' },

@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { homestay } from 'generated/prisma';
 import { CreateHomestayModal } from './create-homestay-modal';
-import { EditHomestayModal } from './edit-homestay-modal';
 
 
 interface Homestay extends homestay {
@@ -138,7 +137,13 @@ export function HomestaysTable({
                   <TableCell className="hidden md:table-cell">{homestay.max_guests}</TableCell>
                   <TableCell className="hidden md:table-cell">{new Date(homestay.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <EditHomestayModal homestay={homestay} onSuccess={fetchHomestays} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => router.push(`/homestays/${homestay.id}/edit`)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

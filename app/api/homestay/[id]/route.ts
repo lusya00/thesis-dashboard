@@ -24,7 +24,9 @@ export async function GET(
             name: true,
             email: true,
           }
-        }
+        },
+        homestayImages: true,
+        homestayRoom: true
       }
     });
     

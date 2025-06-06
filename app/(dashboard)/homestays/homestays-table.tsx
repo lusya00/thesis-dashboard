@@ -22,8 +22,6 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { homestay } from 'generated/prisma';
 import { CreateHomestayModal } from '../create-homestay-modal';
-import { EditHomestayModal } from '../edit-homestay-modal';
-
 
 interface Homestay extends homestay {
   admin_users: {
@@ -44,7 +42,6 @@ export function HomestaysTable({
   const [homestays, setHomestays] = useState<Homestay[]>([]);
   const [totalHomestays, setTotalHomestays] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-
 
   const getStatus = (status: string) => {
     if (status === 'active') return 'Active';
@@ -118,9 +115,7 @@ export function HomestaysTable({
                 <TableHead className="hidden md:table-cell">Price</TableHead>
                 <TableHead className="hidden md:table-cell">Guests</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead>
-                Actions
-                </TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -129,16 +124,30 @@ export function HomestaysTable({
                   <TableCell>{homestay.id}</TableCell>
                   <TableCell>{homestay.title}</TableCell>
                   <TableCell>{homestay.location}</TableCell>
-                  <TableCell>{homestay.admin_users.name}</TableCell>
-                  <TableCell>{homestay.admin_users.email}</TableCell>
+                  <TableCell>{homestay.admin_users?.name}</TableCell>
+                  <TableCell>{homestay.admin_users?.email}</TableCell>
                   <TableCell>
-                    <span className={`p-1 rounded-md text-white ${getColorStatus(homestay.status)}`}>{getStatus(homestay.status)}</span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getColorStatus(homestay.status)} text-white`}>
+                      {getStatus(homestay.status)}
+                    </span>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">IDR {String(homestay.base_price)}</TableCell>
-                  <TableCell className="hidden md:table-cell">{homestay.max_guests}</TableCell>
-                  <TableCell className="hidden md:table-cell">{new Date(homestay.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {homestay.base_price ? `$${homestay.base_price}` : '-'}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {homestay.max_guests || '-'}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {new Date(homestay.created_at).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>
-                    <EditHomestayModal homestay={homestay} onSuccess={fetchHomestays} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => router.push(`/homestays/${homestay.id}/edit`)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

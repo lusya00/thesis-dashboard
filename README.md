@@ -10,7 +10,7 @@
  
 ## Overview
 
-This is a starter template using the following stack:
+This is a starter template using the following stack: 
 
 - Framework - [Next.js (App Router)](https://nextjs.org)
 - Language - [TypeScript](https://www.typescriptlang.org) 

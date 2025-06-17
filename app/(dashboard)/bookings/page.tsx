@@ -4,10 +4,27 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Eye, CheckCircle, XCircle, Clock, User, ClipboardList, Calendar, CreditCard, FileText, Star } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Eye, CheckCircle, XCircle, Clock, User, ClipboardList, Calendar, CreditCard, FileText, Star, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { booking_status } from 'generated/prisma';
+import { format } from 'date-fns';
 
 interface Booking {
   id: number;
@@ -62,7 +79,13 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [selectedTab, setSelectedTab] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<booking_status | 'all'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchBookings();
@@ -131,9 +154,31 @@ export default function BookingsPage() {
   };
 
   const filteredBookings = bookings.filter(booking => {
-    if (selectedTab === 'all') return true;
-    return booking.status === selectedTab;
+    const matchesSearch = 
+      booking.booking_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.homestayRoom.homestay.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.homestayRoom.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.landing_page_user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.landing_page_user?.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
+    const matchesPayment = paymentFilter === 'all' || 
+      (paymentFilter === 'paid' && booking.is_paid) || 
+      (paymentFilter === 'unpaid' && !booking.is_paid);
+
+    return matchesSearch && matchesStatus && matchesPayment;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBookings = filteredBookings.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, paymentFilter]);
 
   if (loading) {
     return (
@@ -148,263 +193,351 @@ export default function BookingsPage() {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Bookings</h1>
 
-        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search bookings..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={(value: booking_status | 'all') => setStatusFilter(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={paymentFilter} onValueChange={(value: 'all' | 'paid' | 'unpaid') => setPaymentFilter(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by payment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Payments</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value={selectedTab}>
-            <div className="grid gap-4">
-              {filteredBookings.map((booking) => (
-                <Card key={booking.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold">Booking #{booking.booking_number}</h3>
-                        <p className="text-sm text-gray-500">
-                          {booking.homestayRoom.homestay.title} - {booking.homestayRoom.title}
-                          {booking.homestayRoom.room_number && ` (${booking.homestayRoom.room_number})`}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                          {getStatusIcon(booking.status)}
-                          <span className="ml-1">{booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span>
-                        </span>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedBooking(booking)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="text-2xl font-bold">Booking Details</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-6">
-                              <div className="grid grid-cols-2 gap-6">
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <h4 className="font-semibold text-lg mb-3 flex items-center">
-                                    <User className="h-5 w-5 mr-2" />
-                                    Guest Information
-                                  </h4>
-                                  <div className="space-y-2">
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-24">Name:</span>
-                                      <span>{booking.landing_page_user?.name || 'N/A'}</span>
-                                    </p>
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-24">Email:</span>
-                                      <span>{booking.landing_page_user?.email || 'N/A'}</span>
-                                    </p>
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-24">Phone:</span>
-                                      <span>{booking.landing_page_user?.phone_number || 'N/A'}</span>
-                                    </p>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Booking #</TableHead>
+                  <TableHead>Guest</TableHead>
+                  <TableHead>Homestay</TableHead>
+                  <TableHead>Room</TableHead>
+                  <TableHead>Check-in</TableHead>
+                  <TableHead>Check-out</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentBookings.map((booking) => (
+                  <TableRow key={booking.id}>
+                    <TableCell className="font-medium">{booking.booking_number}</TableCell>
+                    <TableCell>
+                      {booking.landing_page_user ? (
+                        <div>
+                          <div>{booking.landing_page_user.name}</div>
+                          <div className="text-sm text-gray-500">{booking.landing_page_user.email}</div>
+                        </div>
+                      ) : (
+                        'N/A'
+                      )}
+                    </TableCell>
+                    <TableCell>{booking.homestayRoom.homestay.title}</TableCell>
+                    <TableCell>
+                      {booking.homestayRoom.title}
+                      {booking.homestayRoom.room_number && ` (${booking.homestayRoom.room_number})`}
+                    </TableCell>
+                    <TableCell>{format(new Date(booking.start_date), 'MMM d, yyyy')}</TableCell>
+                    <TableCell>{format(new Date(booking.end_date), 'MMM d, yyyy')}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(booking.status)}>
+                        {getStatusIcon(booking.status)}
+                        <span className="ml-1">{booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={booking.is_paid ? "default" : "destructive"}>
+                        {booking.is_paid ? 'Paid' : 'Unpaid'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {booking.total_price} {booking.homestayRoom.currency}
+                    </TableCell>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setSelectedBooking(booking)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-2xl font-bold">Booking Details</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="bg-gray-50 p-4 rounded-lg">
+                                <h4 className="font-semibold text-lg mb-3 flex items-center">
+                                  <User className="h-5 w-5 mr-2" />
+                                  Guest Information
+                                </h4>
+                                <div className="space-y-2">
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-24">Name:</span>
+                                    <span>{booking.landing_page_user?.name || 'N/A'}</span>
                                   </div>
-                                </div>
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <h4 className="font-semibold text-lg mb-3 flex items-center">
-                                    <ClipboardList className="h-5 w-5 mr-2" />
-                                    Booking Information
-                                  </h4>
-                                  <div className="space-y-2">
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-24">Number:</span>
-                                      <span>{booking.booking_number}</span>
-                                    </p>
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-24">Status:</span>
-                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                                        {getStatusIcon(booking.status)}
-                                        <span className="ml-1">{booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span>
-                                      </span>
-                                    </p>
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-24">Guests:</span>
-                                      <span>{booking.number_of_guests}</span>
-                                    </p>
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-24">Email:</span>
+                                    <span>{booking.landing_page_user?.email || 'N/A'}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-24">Phone:</span>
+                                    <span>{booking.landing_page_user?.phone_number || 'N/A'}</span>
                                   </div>
                                 </div>
                               </div>
-
                               <div className="bg-gray-50 p-4 rounded-lg">
                                 <h4 className="font-semibold text-lg mb-3 flex items-center">
-                                  <Calendar className="h-5 w-5 mr-2" />
-                                  Dates
+                                  <ClipboardList className="h-5 w-5 mr-2" />
+                                  Booking Information
                                 </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-32">Check-in:</span>
-                                      <span>{new Date(booking.start_date).toLocaleDateString()}</span>
-                                    </p>
-                                    {booking.check_in_time && (
-                                      <p className="flex items-center">
-                                        <span className="font-medium w-32">Check-in Time:</span>
-                                        <span>{new Date(booking.check_in_time).toLocaleTimeString()}</span>
-                                      </p>
-                                    )}
+                                <div className="space-y-2">
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-24">Number:</span>
+                                    <span>{booking.booking_number}</span>
                                   </div>
-                                  <div className="space-y-2">
-                                    <p className="flex items-center">
-                                      <span className="font-medium w-32">Check-out:</span>
-                                      <span>{new Date(booking.end_date).toLocaleDateString()}</span>
-                                    </p>
-                                    {booking.check_out_time && (
-                                      <p className="flex items-center">
-                                        <span className="font-medium w-32">Check-out Time:</span>
-                                        <span>{new Date(booking.check_out_time).toLocaleTimeString()}</span>
-                                      </p>
-                                    )}
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-24">Status:</span>
+                                    <Badge className={getStatusColor(booking.status)}>
+                                      {getStatusIcon(booking.status)}
+                                      <span className="ml-1">{booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span>
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-24">Guests:</span>
+                                    <span>{booking.number_of_guests}</span>
                                   </div>
                                 </div>
                               </div>
+                            </div>
 
-                              <div className="bg-gray-50 p-4 rounded-lg">
-                                <h4 className="font-semibold text-lg mb-3 flex items-center">
-                                  <CreditCard className="h-5 w-5 mr-2" />
-                                  Payment Information
-                                </h4>
-                                <div className="space-y-4">
-                                  <div className="flex items-center justify-between p-3 bg-white rounded-md">
-                                    <div>
-                                      <p className="font-medium">Total Price</p>
-                                      <p className="text-2xl font-bold text-primary">
-                                        {booking.total_price} {booking.homestayRoom.currency}
-                                      </p>
-                                    </div>
-                                    <div className={`px-3 py-1 rounded-full ${booking.is_paid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                      {booking.is_paid ? 'Paid' : 'Unpaid'}
-                                    </div>
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <h4 className="font-semibold text-lg mb-3 flex items-center">
+                                <Calendar className="h-5 w-5 mr-2" />
+                                Dates
+                              </h4>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-32">Check-in:</span>
+                                    <span>{format(new Date(booking.start_date), 'MMM d, yyyy')}</span>
                                   </div>
-                                  
-                                  {booking.payments.length > 0 && (
-                                    <div>
-                                      <h5 className="font-medium mb-2">Payment History</h5>
-                                      <div className="space-y-2">
-                                        {booking.payments.map((payment) => (
-                                          <div key={payment.id} className="bg-white p-3 rounded-md">
-                                            <div className="flex justify-between items-center">
-                                              <div>
-                                                <p className="font-medium">{payment.amount} {payment.currency}</p>
-                                                <p className="text-sm text-gray-500">{payment.payment_method}</p>
-                                              </div>
-                                              <div className="text-right">
-                                                <p className={`text-sm ${payment.payment_status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
-                                                  {payment.payment_status}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                  {new Date(payment.payment_date).toLocaleString()}
-                                                </p>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
+                                  {booking.check_in_time && (
+                                    <div className="flex items-center">
+                                      <span className="font-medium w-32">Check-in Time:</span>
+                                      <span>{format(new Date(booking.check_in_time), 'h:mm a')}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center">
+                                    <span className="font-medium w-32">Check-out:</span>
+                                    <span>{format(new Date(booking.end_date), 'MMM d, yyyy')}</span>
+                                  </div>
+                                  {booking.check_out_time && (
+                                    <div className="flex items-center">
+                                      <span className="font-medium w-32">Check-out Time:</span>
+                                      <span>{format(new Date(booking.check_out_time), 'h:mm a')}</span>
                                     </div>
                                   )}
                                 </div>
                               </div>
+                            </div>
 
-                              {booking.notes && (
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <h4 className="font-semibold text-lg mb-3 flex items-center">
-                                    <FileText className="h-5 w-5 mr-2" />
-                                    Notes
-                                  </h4>
-                                  <p className="text-gray-700">{booking.notes}</p>
-                                </div>
-                              )}
-
-                              {booking.special_requests && (
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <h4 className="font-semibold text-lg mb-3 flex items-center">
-                                    <Star className="h-5 w-5 mr-2" />
-                                    Special Requests
-                                  </h4>
-                                  <p className="text-gray-700">{booking.special_requests}</p>
-                                </div>
-                              )}
-
-                              {booking.cancellation_reason && (
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <h4 className="font-semibold text-lg mb-3 flex items-center">
-                                    <XCircle className="h-5 w-5 mr-2" />
-                                    Cancellation Details
-                                  </h4>
-                                  <div className="space-y-2">
-                                    <p className="text-gray-700">{booking.cancellation_reason}</p>
-                                    <p className="text-sm text-gray-500">
-                                      Cancelled at: {new Date(booking.cancelled_at!).toLocaleString()}
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <h4 className="font-semibold text-lg mb-3 flex items-center">
+                                <CreditCard className="h-5 w-5 mr-2" />
+                                Payment Information
+                              </h4>
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between p-3 bg-white rounded-md">
+                                  <div>
+                                    <p className="font-medium">Total Price</p>
+                                    <p className="text-2xl font-bold text-primary">
+                                      {booking.total_price} {booking.homestayRoom.currency}
                                     </p>
                                   </div>
+                                  <Badge variant={booking.is_paid ? "default" : "destructive"}>
+                                    {booking.is_paid ? 'Paid' : 'Unpaid'}
+                                  </Badge>
                                 </div>
-                              )}
-
-                              <div className="flex justify-end space-x-2 pt-4">
-                                {booking.status === 'pending' && (
-                                  <>
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                                      className="text-red-600 hover:text-red-700"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                                      className="bg-green-600 hover:bg-green-700"
-                                    >
-                                      Confirm
-                                    </Button>
-                                  </>
-                                )}
-                                {booking.status === 'confirmed' && (
-                                  <Button
-                                    onClick={() => handleStatusChange(booking.id, 'completed')}
-                                    className="bg-blue-600 hover:bg-blue-700"
-                                  >
-                                    Mark as Completed
-                                  </Button>
+                                
+                                {booking.payments.length > 0 && (
+                                  <div>
+                                    <h5 className="font-medium mb-2">Payment History</h5>
+                                    <div className="space-y-2">
+                                      {booking.payments.map((payment) => (
+                                        <div key={payment.id} className="bg-white p-3 rounded-md">
+                                          <div className="flex justify-between items-center">
+                                            <div>
+                                              <p className="font-medium">{payment.amount} {payment.currency}</p>
+                                              <p className="text-sm text-gray-500">{payment.payment_method}</p>
+                                            </div>
+                                            <div className="text-right">
+                                              <p className={`text-sm ${payment.payment_status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                {payment.payment_status}
+                                              </p>
+                                              <p className="text-xs text-gray-500">
+                                                {format(new Date(payment.payment_date), 'MMM d, yyyy h:mm a')}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             </div>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Location:</span>{' '}
-                        {booking.homestayRoom.homestay.location}
-                      </div>
-                      <div>
-                        <span className="font-medium">Total Price:</span>{' '}
-                        {booking.total_price} {booking.homestayRoom.currency}
-                      </div>
-                      <div>
-                        <span className="font-medium">Guests:</span>{' '}
-                        {booking.number_of_guests}
-                      </div>
-                      <div>
-                        <span className="font-medium">Payment Status:</span>{' '}
-                        <span className={booking.is_paid ? 'text-green-600' : 'text-red-600'}>
-                          {booking.is_paid ? 'Paid' : 'Unpaid'}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                            {booking.notes && (
+                              <div className="bg-gray-50 p-4 rounded-lg">
+                                <h4 className="font-semibold text-lg mb-3 flex items-center">
+                                  <FileText className="h-5 w-5 mr-2" />
+                                  Notes
+                                </h4>
+                                <p className="text-gray-700">{booking.notes}</p>
+                              </div>
+                            )}
+
+                            {booking.special_requests && (
+                              <div className="bg-gray-50 p-4 rounded-lg">
+                                <h4 className="font-semibold text-lg mb-3 flex items-center">
+                                  <Star className="h-5 w-5 mr-2" />
+                                  Special Requests
+                                </h4>
+                                <p className="text-gray-700">{booking.special_requests}</p>
+                              </div>
+                            )}
+
+                            {booking.cancellation_reason && (
+                              <div className="bg-gray-50 p-4 rounded-lg">
+                                <h4 className="font-semibold text-lg mb-3 flex items-center">
+                                  <XCircle className="h-5 w-5 mr-2" />
+                                  Cancellation Details
+                                </h4>
+                                <div className="space-y-2">
+                                  <p className="text-gray-700">{booking.cancellation_reason}</p>
+                                  <p className="text-sm text-gray-500">
+                                    Cancelled at: {format(new Date(booking.cancelled_at!), 'MMM d, yyyy h:mm a')}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex justify-end space-x-2 pt-4">
+                              {booking.status === 'pending' && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => handleStatusChange(booking.id, 'cancelled')}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleStatusChange(booking.id, 'confirmed')}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    Confirm
+                                  </Button>
+                                </>
+                              )}
+                              {booking.status === 'confirmed' && (
+                                <Button
+                                  onClick={() => handleStatusChange(booking.id, 'completed')}
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  Mark as Completed
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                  <span className="font-medium">
+                    {Math.min(endIndex, filteredBookings.length)}
+                  </span>{' '}
+                  of <span className="font-medium">{filteredBookings.length}</span> results
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-8 h-8"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -6,10 +6,10 @@
 <span> · </span>
 <a href="https://vercel.com/templates/next.js/admin-dashboard-tailwind-postgres-react-nextjs">Clone & Deploy</a>
 <span>
-</div>
+</div> 
  
 ## Overview 
-
+ 
 This is a starter template using the following stack: 
 
 - Framework - [Next.js (App Router)](https://nextjs.org)

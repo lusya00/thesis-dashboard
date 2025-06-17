@@ -6,7 +6,7 @@
 <span> · </span>
 <a href="https://vercel.com/templates/next.js/admin-dashboard-tailwind-postgres-react-nextjs">Clone & Deploy</a>
 <span>
-</div>
+</div> 
  
 ## Overview 
 

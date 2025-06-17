@@ -22,7 +22,7 @@ export function DesktopNav() {
           <Home className="h-5 w-5" />
         </NavItem>
 
-        <NavItem href="#" label="Orders">
+        <NavItem href="/bookings" label="Bookings">
           <ShoppingCart className="h-5 w-5" />
         </NavItem>
 

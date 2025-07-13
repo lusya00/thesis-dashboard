@@ -192,11 +192,11 @@ export default function UsersPage() {
                 {isLoading ? (
                     <div className="py-8 text-center">
                         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
-                        <p className="mt-2 text-sm text-muted-foreground">Cargando usuarios...</p>
+                        <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
                     </div>
                 ) : filteredUsers.length === 0 ? (
                     <div className="py-8 text-center">
-                        <p className="text-sm text-muted-foreground">No se encontraron usuarios</p>
+                        <p className="text-sm text-muted-foreground">No users found</p>
                     </div>
                 ) : (
                     <div className="rounded-md border">

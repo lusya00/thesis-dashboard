@@ -22,9 +22,12 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { homestay } from 'generated/prisma';
 import { CreateHomestayModal } from '../create-homestay-modal';
+<<<<<<< HEAD
 import { EditHomestayModal } from '../edit-homestay-modal';
 import Image from 'next/image';
 
+=======
+>>>>>>> 3ce8fad9b489bb548cea1d9ceba3a791e9dfaae9
 
 interface Homestay extends homestay {
   admin_users: {
@@ -51,7 +54,6 @@ export function HomestaysTable({
   const [homestays, setHomestays] = useState<Homestay[]>([]);
   const [totalHomestays, setTotalHomestays] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-
 
   const getStatus = (status: string) => {
     if (status === 'active') return 'Active';
@@ -126,9 +128,7 @@ export function HomestaysTable({
                 <TableHead className="hidden md:table-cell">Price</TableHead>
                 <TableHead className="hidden md:table-cell">Guests</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead>
-                Actions
-                </TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

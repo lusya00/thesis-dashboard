@@ -23,6 +23,7 @@ import { useEffect, useState } from 'react';
 import { homestay } from 'generated/prisma';
 import { CreateHomestayModal } from '../create-homestay-modal';
 import { EditHomestayModal } from '../edit-homestay-modal';
+import Image from 'next/image';
 
 
 interface Homestay extends homestay {
@@ -30,7 +31,13 @@ interface Homestay extends homestay {
     id: number;
     name: string;
     email: string;
-  }
+  };
+  homestayImages?: Array<{
+    id: number;
+    img_url: string;
+    is_primary: boolean;
+    order: number;
+  }>;
 }
 
 export function HomestaysTable({
@@ -110,6 +117,7 @@ export function HomestaysTable({
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
+                <TableHead>Imagen</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Owner</TableHead>
@@ -124,24 +132,42 @@ export function HomestaysTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {homestays.map((homestay) => (
-                <TableRow key={homestay.id}>
-                  <TableCell>{homestay.id}</TableCell>
-                  <TableCell>{homestay.title}</TableCell>
-                  <TableCell>{homestay.location}</TableCell>
-                  <TableCell>{homestay.admin_users.name}</TableCell>
-                  <TableCell>{homestay.admin_users.email}</TableCell>
-                  <TableCell>
-                    <span className={`p-1 rounded-md text-white ${getColorStatus(homestay.status)}`}>{getStatus(homestay.status)}</span>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">IDR {String(homestay.base_price)}</TableCell>
-                  <TableCell className="hidden md:table-cell">{homestay.max_guests}</TableCell>
-                  <TableCell className="hidden md:table-cell">{new Date(homestay.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <EditHomestayModal homestay={homestay} onSuccess={fetchHomestays} />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {homestays.map((homestay) => {
+                const primaryImage = homestay.homestayImages?.find(img => img.is_primary) || homestay.homestayImages?.[0];
+                return (
+                  <TableRow key={homestay.id}>
+                    <TableCell>{homestay.id}</TableCell>
+                    <TableCell>
+                      {primaryImage ? (
+                        <Image
+                          src={primaryImage.img_url}
+                          width={100}
+                          height={100}
+                          alt="Imagen del homestay"
+                          className="w-12 h-12 object-cover rounded-lg border"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">Sin imagen</span>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>{homestay.title}</TableCell>
+                    <TableCell>{homestay.location}</TableCell>
+                    <TableCell>{homestay.admin_users.name}</TableCell>
+                    <TableCell>{homestay.admin_users.email}</TableCell>
+                    <TableCell>
+                      <span className={`p-1 rounded-md text-white ${getColorStatus(homestay.status)}`}>{getStatus(homestay.status)}</span>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">IDR {String(homestay.base_price)}</TableCell>
+                    <TableCell className="hidden md:table-cell">{homestay.max_guests}</TableCell>
+                    <TableCell className="hidden md:table-cell">{new Date(homestay.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <EditHomestayModal homestay={homestay} onSuccess={fetchHomestays} />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

@@ -14,8 +14,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Pencil, Loader2 } from 'lucide-react';
+import { Pencil, Loader2, X } from 'lucide-react';
 import { homestay } from 'generated/prisma';
+import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
 
 // Interfaces
 interface User {
@@ -31,7 +32,13 @@ interface Homestay extends homestay {
     id: number;
     name: string;
     email: string;
-  }
+  };
+  homestayImages?: Array<{
+    id: number;
+    img_url: string;
+    is_primary: boolean;
+    order: number;
+  }>;
 }
 
 interface EditHomestayModalProps {
@@ -44,6 +51,8 @@ export function EditHomestayModal({ homestay, onSuccess }: EditHomestayModalProp
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [images, setImages] = useState<ImageFile[]>([]);
+  const [existingImages, setExistingImages] = useState<Array<{ id: number; img_url: string; is_primary: boolean; order: number }>>([]);
   const [formData, setFormData] = useState({
     title: homestay.title,
     description: homestay.description || '',
@@ -62,6 +71,7 @@ export function EditHomestayModal({ homestay, onSuccess }: EditHomestayModalProp
     // Load users when modal opens
     if (open) {
       fetchUsers();
+      loadExistingImages();
     }
   }, [open]);
 
@@ -76,6 +86,30 @@ export function EditHomestayModal({ homestay, onSuccess }: EditHomestayModalProp
       setError('Error loading users');
     } finally {
       setLoadingUsers(false);
+    }
+  };
+
+  const loadExistingImages = async () => {
+    try {
+      const response = await fetch(`/api/homestay/images?homestayId=${homestay.id}`);
+      const data = await response.json();
+      setExistingImages(data);
+    } catch (error) {
+      console.error('Error loading images:', error);
+    }
+  };
+
+  const deleteExistingImage = async (imageId: number) => {
+    try {
+      const response = await fetch(`/api/homestay/images/${imageId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setExistingImages(prev => prev.filter(img => img.id !== imageId));
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
     }
   };
 
@@ -128,6 +162,27 @@ export function EditHomestayModal({ homestay, onSuccess }: EditHomestayModalProp
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error updating homestay');
+      }
+
+      // Subir nuevas imágenes si las hay
+      if (images.length > 0) {
+        const imageUploadPromises = images.map(async (image, index) => {
+          const formData = new FormData();
+          formData.append('file', image.file);
+          formData.append('homestayId', homestay.id.toString());
+          formData.append('isPrimary', (existingImages.length === 0 && index === 0) ? 'true' : 'false');
+
+          const uploadResponse = await fetch('/api/homestay/images', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error('Error al subir imagen');
+          }
+        });
+
+        await Promise.all(imageUploadPromises);
       }
       
       setOpen(false);
@@ -297,6 +352,47 @@ export function EditHomestayModal({ homestay, onSuccess }: EditHomestayModalProp
               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
             <Label htmlFor="has_rooms">Has rooms</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Imágenes Existentes</Label>
+            {existingImages.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {existingImages.map((image) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.img_url}
+                      alt="Imagen del homestay"
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => deleteExistingImage(image.id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      disabled={loading}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    {image.is_primary && (
+                      <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                        Principal
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No hay imágenes.</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Agregar Nuevas Imágenes</Label>
+            <ImageUpload
+              onImagesChange={setImages}
+              maxImages={5}
+              disabled={loading}
+            />
           </div>
           
           <SheetFooter className="pt-4">

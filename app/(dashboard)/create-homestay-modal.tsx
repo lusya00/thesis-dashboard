@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle, Loader2 } from 'lucide-react';
+import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
 
 // Interfaces
 interface User {
@@ -33,6 +34,7 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState<ImageFile[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -114,6 +116,29 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
         throw new Error(errorData.error || 'Error creating homestay');
       }
 
+      const createdHomestay = await response.json();
+
+      // Subir imágenes si las hay
+      if (images.length > 0) {
+        const imageUploadPromises = images.map(async (image, index) => {
+          const formData = new FormData();
+          formData.append('file', image.file);
+          formData.append('homestayId', createdHomestay.id.toString());
+          formData.append('isPrimary', index === 0 ? 'true' : 'false');
+
+          const uploadResponse = await fetch('/api/homestay/images', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error('Error al subir imagen');
+          }
+        });
+
+        await Promise.all(imageUploadPromises);
+      }
+
       // Reset form and close modal
       setFormData({
         title: '',
@@ -126,6 +151,7 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
         contact_number: '',
         has_rooms: false
       });
+      setImages([]);
       
       setOpen(false);
       
@@ -273,6 +299,15 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
             <Label htmlFor="has_rooms">Has rooms</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Imágenes</Label>
+            <ImageUpload
+              onImagesChange={setImages}
+              maxImages={5}
+              disabled={loading}
+            />
           </div>
           
           <SheetFooter className="pt-4">

@@ -24,6 +24,12 @@ export async function GET(
             name: true,
             email: true,
           }
+        },
+        homestayImages: {
+          orderBy: [
+            { is_primary: 'desc' },
+            { order: 'asc' }
+          ]
         }
       }
     });

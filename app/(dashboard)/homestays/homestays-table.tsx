@@ -22,12 +22,9 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { homestay } from 'generated/prisma';
 import { CreateHomestayModal } from '../create-homestay-modal';
-<<<<<<< HEAD
 import { EditHomestayModal } from '../edit-homestay-modal';
 import Image from 'next/image';
 
-=======
->>>>>>> 3ce8fad9b489bb548cea1d9ceba3a791e9dfaae9
 
 interface Homestay extends homestay {
   admin_users: {

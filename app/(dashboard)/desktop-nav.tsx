@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, LineChart, Package, Settings, ShoppingCart, Users2 } from 'lucide-react';
+import { Home, LineChart, Package, Settings, ShoppingCart, Users2, Calendar } from 'lucide-react';
 import { NavItem } from './nav-item';
 import { VercelLogo } from '@/components/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,6 +28,10 @@ export function DesktopNav() {
 
         <NavItem href="/homestays" label="Homestays">
           <Package className="h-5 w-5" />
+        </NavItem>
+
+        <NavItem href="/activities" label="Activities">
+          <Calendar className="h-5 w-5" />
         </NavItem>
 
         <NavItem href="/users" label="Users">

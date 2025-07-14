@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { uploadHomestayImage, validateWebPFile } from '@/lib/supabase'
-import { auth } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {

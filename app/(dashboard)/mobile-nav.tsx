@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Package, Package2, PanelLeft, LineChart, ShoppingCart, Users2 } from 'lucide-react';
+import { Home, Package, Package2, PanelLeft, LineChart, ShoppingCart, Users2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -43,6 +43,13 @@ export function MobileNav() {
           >
             <Package className="h-5 w-5" />
             Homestays
+          </Link>
+          <Link
+            href="/activities"
+            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <Calendar className="h-5 w-5" />
+            Activities
           </Link>
           <Link
             href="#"

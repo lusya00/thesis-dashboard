@@ -1,15 +1,15 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-    const id = parseInt(params.id);
-    
-    if (isNaN(id)) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const id = (await params).id;
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId)) {
         return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
     }
     
     const activity = await prisma.activities.findUnique({
-        where: { id },
+        where: { id: parsedId },
         include: {
             admin_users: {
                 select: {
@@ -58,11 +58,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json(activity);
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id);
+        const id = (await params).id;
+        const parsedId = parseInt(id);
         
-        if (isNaN(id)) {
+        if (isNaN(parsedId)) {
             return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
         }
         
@@ -96,7 +97,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         
         // Verificar si la actividad existe
         const existingActivity = await prisma.activities.findUnique({
-            where: { id }
+            where: { id: parsedId }
         });
         
         if (!existingActivity) {
@@ -105,7 +106,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         
         // Actualizar la actividad
         const updatedActivity = await prisma.activities.update({
-            where: { id },
+            where: { id: parsedId },
             data: {
                 title,
                 description,
@@ -159,17 +160,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id);
+        const id = (await params).id;
+        const parsedId = parseInt(id);
         
-        if (isNaN(id)) {
+        if (isNaN(parsedId)) {
             return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
         }
         
         // Verificar si la actividad existe
         const existingActivity = await prisma.activities.findUnique({
-            where: { id }
+            where: { id: parsedId }
         });
         
         if (!existingActivity) {
@@ -178,7 +180,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         
         // Eliminar la actividad
         await prisma.activities.delete({
-            where: { id }
+            where: { id: parsedId }
         });
         
         return NextResponse.json({ message: 'Activity deleted successfully' });

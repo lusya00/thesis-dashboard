@@ -10,6 +10,12 @@ export async function GET(request: NextRequest) {
                     name: true,
                     email: true,
                 }
+            },
+            homestayImages: {
+                orderBy: [
+                    { is_primary: 'desc' },
+                    { order: 'asc' }
+                ]
             }
         },
         orderBy: {

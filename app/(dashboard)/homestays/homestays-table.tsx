@@ -22,13 +22,22 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { homestay } from 'generated/prisma';
 import { CreateHomestayModal } from '../create-homestay-modal';
+import { EditHomestayModal } from '../edit-homestay-modal';
+import Image from 'next/image';
+
 
 interface Homestay extends homestay {
   admin_users: {
     id: number;
     name: string;
     email: string;
-  }
+  };
+  homestayImages?: Array<{
+    id: number;
+    img_url: string;
+    is_primary: boolean;
+    order: number;
+  }>;
 }
 
 export function HomestaysTable({

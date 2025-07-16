@@ -9,67 +9,83 @@ datasource db {
 }
 
 model admin_users {
-  id            Int             @id @default(autoincrement())
-  username      String          @unique @db.VarChar(50)
-  password      String          @db.VarChar(255)
-  email         String          @unique @db.VarChar(255)
-  name          String          @db.VarChar(100)
-  role          user_role       @default(homestay_owner)
-  is_active     Boolean         @default(true)
-  last_login    DateTime?       @db.Timestamp(6)
-  created_at    DateTime        @default(now()) @db.Timestamp(6)
-  updated_at    DateTime        @default(now()) @db.Timestamp(6)
-  homestay      homestay[]
-  notifications notifications[]
+  id             Int             @id @default(autoincrement())
+  username       String          @unique @db.VarChar(50)
+  password       String          @db.VarChar(255)
+  email          String          @unique @db.VarChar(255)
+  name           String          @db.VarChar(100)
+  role           user_role       @default(homestay_owner)
+  is_active      Boolean         @default(true)
+  last_login     DateTime?       @db.Timestamp(6)
+  created_at     DateTime        @default(now()) @db.Timestamp(6)
+  updated_at     DateTime        @default(now()) @db.Timestamp(6)
+  google_id      String?         @unique @db.VarChar(255)
+  oauth_provider String?         @db.VarChar(50)
+  oauth_picture  String?         @db.VarChar(500)
+  auth_method    String?         @default("email") @db.VarChar(20)
+  homestay       homestay[]
+  notifications  notifications[]
+  activities     activities[]
+
+  @@index([google_id], map: "idx_admin_user_google_id")
 }
 
 model booking {
-  id                  Int                @id @default(autoincrement())
-  start_date          DateTime           @db.Timestamp(6)
-  end_date            DateTime           @db.Timestamp(6)
-  room_id             Int
-  status              booking_status     @default(pending)
-  is_paid             Boolean            @default(false)
-  user_id             Int?
-  booking_number      String             @unique @db.VarChar(50)
-  total_price         Decimal            @db.Decimal(10, 2)
-  payment_method      String?            @db.VarChar(50)
-  check_in_time       DateTime?          @db.Time(6)
-  check_out_time      DateTime?          @db.Time(6)
-  number_of_guests    Int
-  notes               String?
-  special_requests    String?
-  cancellation_reason String?
-  cancelled_at        DateTime?          @db.Timestamp(6)
-  created_at          DateTime           @default(now()) @db.Timestamp(6)
-  updated_at          DateTime           @default(now()) @db.Timestamp(6)
-  homestayRoom        homestayRoom       @relation(fields: [room_id], references: [id], onUpdate: NoAction, map: "room_booking")
-  landing_page_user   landing_page_user? @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "user_booking")
-  payments            payments[]
+  id                        Int                @id @default(autoincrement())
+  start_date                DateTime           @db.Timestamp(6)
+  end_date                  DateTime           @db.Timestamp(6)
+  room_id                   Int
+  status                    booking_status     @default(pending)
+  is_paid                   Boolean            @default(false)
+  user_id                   Int?
+  booking_number            String             @unique @db.VarChar(50)
+  total_price               Decimal            @db.Decimal(10, 2)
+  payment_method            String?            @db.VarChar(50)
+  check_in_time             DateTime?          @db.Time(6)
+  check_out_time            DateTime?          @db.Time(6)
+  number_of_guests          Int
+  notes                     String?
+  special_requests          String?
+  cancellation_reason       String?
+  cancelled_at              DateTime?          @db.Timestamp(6)
+  created_at                DateTime           @default(now()) @db.Timestamp(6)
+  updated_at                DateTime           @default(now()) @db.Timestamp(6)
+  actual_check_in_time      DateTime?          @db.Timestamp(6)
+  actual_check_out_time     DateTime?          @db.Timestamp(6)
+  housekeeping_completed_at DateTime?          @db.Timestamp(6)
+  housekeeping_status       String?            @default("pending") @db.VarChar(20)
+  homestayRoom              homestayRoom       @relation(fields: [room_id], references: [id], onUpdate: NoAction, map: "room_booking")
+  landing_page_user         landing_page_user? @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "user_booking")
+  payments                  payments[]
 
   @@index([room_id], map: "idx_booking_room_id")
   @@index([status], map: "idx_booking_status")
   @@index([user_id], map: "idx_booking_user_id")
+  @@index([room_id, start_date, end_date, status], map: "idx_booking_room_date_status")
+  @@index([updated_at], map: "idx_booking_updated_at")
 }
 
 model homestay {
-  id             Int              @id @default(autoincrement())
-  title          String           @db.VarChar(255)
-  description    String?
-  user_id        Int
-  status         homestay_status  @default(active)
-  has_rooms      Boolean          @default(false)
-  location       String           @db.VarChar(255)
-  address        String
-  base_price     Decimal?         @db.Decimal(10, 2)
-  max_guests     Int?
-  contact_number String?          @db.VarChar(20)
-  created_at     DateTime         @default(now()) @db.Timestamp(6)
-  updated_at     DateTime         @default(now()) @db.Timestamp(6)
-  admin_users    admin_users      @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "homestay_user")
-  homestayImages homestayImages[]
-  homestayRoom   homestayRoom[]
-  reviews        reviews[]
+  id                    Int                     @id @default(autoincrement())
+  title                 String                  @db.VarChar(255)
+  description           String?
+  user_id               Int
+  status                homestay_status         @default(active)
+  has_rooms             Boolean                 @default(false)
+  location              String                  @db.VarChar(255)
+  address               String
+  base_price            Decimal?                @db.Decimal(10, 2)
+  max_guests            Int?
+  contact_number        String?                 @db.VarChar(20)
+  created_at            DateTime                @default(now()) @db.Timestamp(6)
+  updated_at            DateTime                @default(now()) @db.Timestamp(6)
+  category              String?                 @db.VarChar(50)
+  admin_users           admin_users             @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "homestay_user")
+  homestayImages        homestayImages[]
+  homestayRoom          homestayRoom[]
+  homestay_translations homestay_translations[]
+  reviews               reviews[]
+  activities            activities[]
 
   @@index([user_id], map: "idx_homestay_user_id")
 }
@@ -105,26 +121,37 @@ model homestayRoom {
   homestay              homestay                @relation(fields: [homestay_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "homestay_room")
   relation_feature_room relation_feature_room[]
   reviews               reviews[]
+  room_translations     room_translations[]
 
   @@index([homestay_id], map: "idx_homestay_room_homestay_id")
 }
 
 model landing_page_user {
-  id            Int             @id @default(autoincrement())
-  email         String          @unique @db.VarChar(255)
-  name          String          @db.VarChar(100)
-  last_name     String          @db.VarChar(100)
-  passport      String?         @db.VarChar(50)
-  phone_number  String          @db.VarChar(20)
-  type          user_type
-  country       String?         @db.VarChar(100)
-  address       String?
-  is_verified   Boolean         @default(false)
-  created_at    DateTime        @default(now()) @db.Timestamp(6)
-  updated_at    DateTime        @default(now()) @db.Timestamp(6)
-  booking       booking[]
-  notifications notifications[]
-  reviews       reviews[]
+  id                            Int                            @id @default(autoincrement())
+  email                         String                         @unique @db.VarChar(255)
+  name                          String                         @db.VarChar(100)
+  last_name                     String                         @db.VarChar(100)
+  passport                      String?                        @db.VarChar(50)
+  phone_number                  String                         @db.VarChar(20)
+  type                          user_type
+  country                       String?                        @db.VarChar(100)
+  address                       String?
+  is_verified                   Boolean                        @default(false)
+  created_at                    DateTime                       @default(now()) @db.Timestamp(6)
+  updated_at                    DateTime                       @default(now()) @db.Timestamp(6)
+  password                      String?                        @db.VarChar(255)
+  google_id                     String?                        @unique @db.VarChar(255)
+  oauth_provider                String?                        @db.VarChar(50)
+  oauth_picture                 String?                        @db.VarChar(500)
+  auth_method                   String?                        @default("email") @db.VarChar(20)
+  booking                       booking[]
+  notifications                 notifications[]
+  reviews                       reviews[]
+  user_notification_preferences user_notification_preferences?
+  activity_bookings             activity_bookings[]
+  activity_reviews              activity_reviews[]
+
+  @@index([google_id], map: "idx_landing_user_google_id")
 }
 
 model notifications {
@@ -143,19 +170,35 @@ model notifications {
 }
 
 model payments {
-  id             Int      @id @default(autoincrement())
-  booking_id     Int
-  amount         Decimal  @db.Decimal(10, 2)
-  currency       String   @default("IDR") @db.VarChar(3)
-  payment_method String   @db.VarChar(50)
-  payment_status String   @db.VarChar(50)
-  transaction_id String?  @db.VarChar(100)
-  payment_date   DateTime @db.Timestamp(6)
-  created_at     DateTime @default(now()) @db.Timestamp(6)
-  updated_at     DateTime @default(now()) @db.Timestamp(6)
-  booking        booking  @relation(fields: [booking_id], references: [id], onUpdate: NoAction, map: "booking_payment")
+  id                           Int                @id @default(autoincrement())
+  booking_id                   Int
+  amount                       Decimal            @db.Decimal(10, 2)
+  currency                     String             @default("IDR") @db.VarChar(3)
+  payment_method               payment_method_new
+  payment_status               String             @db.VarChar(50)
+  transaction_id               String?            @db.VarChar(100)
+  payment_date                 DateTime           @db.Timestamp(6)
+  created_at                   DateTime           @default(now()) @db.Timestamp(6)
+  updated_at                   DateTime           @default(now()) @db.Timestamp(6)
+  gateway_payment_id           String?            @db.VarChar(255)
+  qris_code                    String?
+  qris_expires_at              DateTime?          @db.Timestamp(6)
+  owner_payout_amount          Decimal?           @db.Decimal(10, 2)
+  payout_status                String?            @default("PENDING") @db.VarChar(50)
+  payout_date                  DateTime?          @db.Timestamp(6)
+  manual_confirmation_required Boolean?           @default(true)
+  gateway_provider             String?            @db.VarChar(50)
+  platform_commission          Decimal?           @db.Decimal(10, 2)
+  confirmation_deadline        DateTime?          @db.Timestamp(6)
+  doku_payment_id              String?            @db.VarChar(255)
+  doku_checkout_url            String?
+  booking                      booking            @relation(fields: [booking_id], references: [id], onUpdate: NoAction, map: "booking_payment")
 
   @@index([booking_id], map: "idx_payments_booking_id")
+  @@index([booking_id, payment_status], map: "idx_payments_booking_status")
+  @@index([doku_payment_id], map: "idx_payments_doku_payment_id")
+  @@index([gateway_payment_id], map: "idx_payments_gateway_payment_id")
+  @@index([gateway_provider], map: "idx_payments_gateway_provider")
 }
 
 model relation_feature_room {
@@ -194,6 +237,247 @@ model room_features {
   created_at            DateTime                @default(now()) @db.Timestamp(6)
   updated_at            DateTime                @default(now()) @db.Timestamp(6)
   relation_feature_room relation_feature_room[]
+}
+
+model homestay_translations {
+  id            Int      @id @default(autoincrement())
+  homestay_id   Int
+  language_code String   @db.VarChar(5)
+  title         String   @db.VarChar(255)
+  description   String?
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @default(now()) @db.Timestamp(6)
+  homestay      homestay @relation(fields: [homestay_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "homestay_translation_homestay")
+
+  @@unique([homestay_id, language_code], map: "unique_homestay_language")
+  @@index([homestay_id, language_code], map: "idx_homestay_translations_combined")
+  @@index([homestay_id], map: "idx_homestay_translations_homestay_id")
+  @@index([language_code], map: "idx_homestay_translations_language")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_sessions {
+  id               Int       @id @default(autoincrement())
+  user_id          Int?
+  user_type        String    @db.VarChar(20)
+  provider         String    @db.VarChar(50)
+  provider_id      String    @db.VarChar(255)
+  access_token     String?
+  refresh_token    String?
+  token_expires_at DateTime? @db.Timestamp(6)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  @@unique([provider, provider_id])
+  @@index([user_id, user_type], map: "idx_oauth_sessions_user")
+}
+
+model room_translations {
+  id            Int          @id @default(autoincrement())
+  room_id       Int
+  language_code String       @db.VarChar(5)
+  title         String       @db.VarChar(255)
+  description   String?
+  created_at    DateTime     @default(now()) @db.Timestamp(6)
+  updated_at    DateTime     @default(now()) @db.Timestamp(6)
+  homestayRoom  homestayRoom @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "room_translation_room")
+
+  @@unique([room_id, language_code], map: "unique_room_language")
+  @@index([room_id, language_code], map: "idx_room_translations_combined")
+  @@index([language_code], map: "idx_room_translations_language")
+  @@index([room_id], map: "idx_room_translations_room_id")
+}
+
+model user_notification_preferences {
+  id                Int               @id @default(autoincrement())
+  user_id           Int               @unique(map: "unique_user_preferences")
+  email_bookings    Boolean?          @default(true)
+  email_promotions  Boolean?          @default(false)
+  email_reminders   Boolean?          @default(true)
+  sms_bookings      Boolean?          @default(false)
+  sms_reminders     Boolean?          @default(false)
+  created_at        DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?         @default(now()) @db.Timestamp(6)
+  landing_page_user landing_page_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_notification_preferences_user")
+
+  @@index([user_id], map: "idx_user_notification_preferences_user_id")
+}
+
+model activities {
+  id                  Int                   @id @default(autoincrement())
+  title               String                @db.VarChar(255)
+  description         String?
+  short_description   String?               @db.VarChar(500)
+  category            activity_category
+  price               Decimal               @db.Decimal(10, 2)
+  currency            String                @default("IDR") @db.VarChar(3)
+  duration_minutes    Int?
+  max_participants    Int
+  min_participants    Int                   @default(1)
+  location            String                @db.VarChar(255)
+  address             String?
+  contact_phone       String?               @db.VarChar(20)
+  contact_email       String?               @db.VarChar(255)
+  status              activity_status       @default(active)
+  is_featured         Boolean               @default(false)
+  difficulty_level    difficulty_level      @default(easy)
+  age_restriction     String?               @db.VarChar(100)
+  includes            String?
+  excludes            String?
+  requirements        String?
+  cancellation_policy String?
+  meeting_point       String?
+  homestay_id         Int?
+  manager_id          Int?
+  created_at          DateTime              @default(now()) @db.Timestamp(6)
+  updated_at          DateTime              @default(now()) @db.Timestamp(6)
+  homestay            homestay?             @relation(fields: [homestay_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "activity_homestay")
+  admin_users         admin_users?          @relation(fields: [manager_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "activity_manager")
+  activity_bookings   activity_bookings[]
+  activity_images     activity_images[]
+  activity_schedules  activity_schedules[]
+  activity_reviews    activity_reviews[]
+
+  @@index([homestay_id], map: "idx_activities_homestay_id")
+  @@index([manager_id], map: "idx_activities_manager_id")
+  @@index([category], map: "idx_activities_category")
+  @@index([status], map: "idx_activities_status")
+}
+
+model activity_images {
+  id          Int        @id @default(autoincrement())
+  activity_id Int
+  img_url     String     @db.VarChar(255)
+  is_primary  Boolean    @default(false)
+  order       Int        @default(0)
+  caption     String?    @db.VarChar(255)
+  created_at  DateTime   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime   @default(now()) @db.Timestamp(6)
+  activities  activities @relation(fields: [activity_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "activity_image")
+
+  @@index([activity_id], map: "idx_activity_images_activity_id")
+}
+
+model activity_schedules {
+  id                  Int        @id @default(autoincrement())
+  activity_id         Int
+  date                DateTime   @db.Date
+  start_time          DateTime   @db.Time(6)
+  end_time            DateTime?  @db.Time(6)
+  available_spots     Int
+  booked_spots        Int        @default(0)
+  price_override      Decimal?   @db.Decimal(10, 2)
+  is_available        Boolean    @default(true)
+  notes               String?
+  created_at          DateTime   @default(now()) @db.Timestamp(6)
+  updated_at          DateTime   @default(now()) @db.Timestamp(6)
+  activities          activities @relation(fields: [activity_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "schedule_activity")
+  activity_bookings   activity_bookings[]
+
+  @@index([activity_id], map: "idx_activity_schedules_activity_id")
+  @@index([date], map: "idx_activity_schedules_date")
+}
+
+model activity_bookings {
+  id                  Int                    @id @default(autoincrement())
+  activity_id         Int
+  schedule_id         Int?
+  user_id             Int?
+  booking_number      String                 @unique @db.VarChar(50)
+  participant_count   Int
+  total_price         Decimal                @db.Decimal(10, 2)
+  currency            String                 @default("IDR") @db.VarChar(3)
+  status              activity_booking_status @default(pending)
+  payment_status      payment_status         @default(unpaid)
+  payment_method      String?                @db.VarChar(50)
+  participant_details Json?
+  special_requests    String?
+  notes               String?
+  cancellation_reason String?
+  cancelled_at        DateTime?              @db.Timestamp(6)
+  booking_date        DateTime               @db.Timestamp(6)
+  created_at          DateTime               @default(now()) @db.Timestamp(6)
+  updated_at          DateTime               @default(now()) @db.Timestamp(6)
+  activities          activities             @relation(fields: [activity_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "booking_activity")
+  activity_schedules  activity_schedules?    @relation(fields: [schedule_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "booking_schedule")
+  landing_page_user   landing_page_user?     @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "booking_user")
+  activity_reviews    activity_reviews[]
+
+  @@index([activity_id], map: "idx_activity_bookings_activity_id")
+  @@index([schedule_id], map: "idx_activity_bookings_schedule_id")
+  @@index([user_id], map: "idx_activity_bookings_user_id")
+  @@index([status], map: "idx_activity_bookings_status")
+}
+
+model activity_reviews {
+  id                Int               @id @default(autoincrement())
+  activity_id       Int
+  user_id           Int
+  booking_id        Int?
+  rating            Int
+  comment           String?
+  is_verified       Boolean           @default(false)
+  created_at        DateTime          @default(now()) @db.Timestamp(6)
+  updated_at        DateTime          @default(now()) @db.Timestamp(6)
+  activities        activities        @relation(fields: [activity_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "review_activity")
+  activity_bookings activity_bookings? @relation(fields: [booking_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "review_booking")
+  landing_page_user landing_page_user @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "review_activity_user")
+
+  @@index([activity_id], map: "idx_activity_reviews_activity_id")
+  @@index([user_id], map: "idx_activity_reviews_user_id")
+}
+
+enum activity_category {
+  cultural
+  adventure
+  nature
+  food_tour
+  water_sports
+  mountain_hiking
+  city_tour
+  religious
+  art_craft
+  traditional_dance
+  cooking_class
+  photography
+  wellness
+  transportation
+  shopping
+  nightlife
+  educational
+  family_friendly
+  romantic
+  extreme_sports
+}
+
+enum activity_status {
+  active
+  inactive
+  suspended
+  draft
+}
+
+enum difficulty_level {
+  easy
+  moderate
+  challenging
+  expert
+}
+
+enum activity_booking_status {
+  pending
+  confirmed
+  cancelled
+  completed
+  no_show
+}
+
+enum payment_status {
+  unpaid
+  paid
+  partially_paid
+  refunded
+  failed
 }
 
 enum booking_status {
@@ -242,4 +526,20 @@ enum user_role {
 enum user_type {
   user
   guest
+}
+
+enum payment_method {
+  CREDIT_CARD
+  BANK_TRANSFER
+  E_WALLET
+  QRIS
+  DOKU_CHECKOUT
+}
+
+enum payment_method_new {
+  CREDIT_CARD
+  BANK_TRANSFER
+  E_WALLET
+  QRIS
+  DOKU_CHECKOUT
 }

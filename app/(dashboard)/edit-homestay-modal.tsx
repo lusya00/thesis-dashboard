@@ -14,7 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { Pencil, Loader2, X } from 'lucide-react';
+import { homestay } from 'generated/prisma';
 import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
 
 // Interfaces
@@ -26,25 +27,43 @@ interface User {
   role: string;
 }
 
-interface CreateHomestayModalProps {
+interface Homestay extends homestay {
+  admin_users: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  homestayImages?: Array<{
+    id: number;
+    img_url: string;
+    is_primary: boolean;
+    order: number;
+  }>;
+}
+
+interface EditHomestayModalProps {
+  homestay: Homestay;
   onSuccess?: () => void;
 }
 
-export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
+export function EditHomestayModal({ homestay, onSuccess }: EditHomestayModalProps) {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [images, setImages] = useState<ImageFile[]>([]);
+  const [existingImages, setExistingImages] = useState<Array<{ id: number; img_url: string; is_primary: boolean; order: number }>>([]);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    user_id: '',
-    location: '',
-    address: '',
-    base_price: '',
-    max_guests: '',
-    contact_number: '',
-    has_rooms: false
+    title: homestay.title,
+    description: homestay.description || '',
+    user_id: homestay.user_id.toString(),
+    location: homestay.location,
+    address: homestay.address,
+    base_price: homestay.base_price ? homestay.base_price.toString() : '',
+    max_guests: homestay.max_guests ? homestay.max_guests.toString() : '',
+    contact_number: homestay.contact_number || '',
+    has_rooms: homestay.has_rooms,
+    status: homestay.status
   });
   const [error, setError] = useState('');
 
@@ -52,10 +71,12 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
     // Load users when modal opens
     if (open) {
       fetchUsers();
+      loadExistingImages();
     }
   }, [open]);
 
   const fetchUsers = async () => {
+    setLoadingUsers(true);
     try {
       const response = await fetch('/api/users');
       const data = await response.json();
@@ -63,6 +84,32 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
     } catch (error) {
       console.error('Error loading users:', error);
       setError('Error loading users');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const loadExistingImages = async () => {
+    try {
+      const response = await fetch(`/api/homestay/images?homestayId=${homestay.id}`);
+      const data = await response.json();
+      setExistingImages(data);
+    } catch (error) {
+      console.error('Error loading images:', error);
+    }
+  };
+
+  const deleteExistingImage = async (imageId: number) => {
+    try {
+      const response = await fetch(`/api/homestay/images/${imageId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setExistingImages(prev => prev.filter(img => img.id !== imageId));
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
     }
   };
 
@@ -98,13 +145,14 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
 
       const payload = {
         ...formData,
+        id: homestay.id,
         user_id: parseInt(formData.user_id),
         base_price: formData.base_price ? parseFloat(formData.base_price) : null,
         max_guests: formData.max_guests ? parseInt(formData.max_guests) : null
       };
 
-      const response = await fetch('/api/homestay', {
-        method: 'POST',
+      const response = await fetch(`/api/homestay/${homestay.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -113,18 +161,16 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error creating homestay');
+        throw new Error(errorData.error || 'Error updating homestay');
       }
 
-      const createdHomestay = await response.json();
-
-      // Subir imágenes si las hay
+      // Subir nuevas imágenes si las hay
       if (images.length > 0) {
         const imageUploadPromises = images.map(async (image, index) => {
           const formData = new FormData();
           formData.append('file', image.file);
-          formData.append('homestayId', createdHomestay.id.toString());
-          formData.append('isPrimary', index === 0 ? 'true' : 'false');
+          formData.append('homestayId', homestay.id.toString());
+          formData.append('isPrimary', (existingImages.length === 0 && index === 0) ? 'true' : 'false');
 
           const uploadResponse = await fetch('/api/homestay/images', {
             method: 'POST',
@@ -138,20 +184,6 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
 
         await Promise.all(imageUploadPromises);
       }
-
-      // Reset form and close modal
-      setFormData({
-        title: '',
-        description: '',
-        user_id: '',
-        location: '',
-        address: '',
-        base_price: '',
-        max_guests: '',
-        contact_number: '',
-        has_rooms: false
-      });
-      setImages([]);
       
       setOpen(false);
       
@@ -161,7 +193,7 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
       }
     } catch (error) {
       console.error('Error:', error);
-      setError(error instanceof Error ? error.message : 'Error creating homestay');
+      setError(error instanceof Error ? error.message : 'Error updating homestay');
     } finally {
       setLoading(false);
     }
@@ -170,16 +202,15 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Homestay
+        <Button variant="ghost" size="sm">
+          <Pencil className="h-4 w-4" />
         </Button>
       </SheetTrigger>
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Add Homestay</SheetTitle>
+          <SheetTitle>Edit Homestay</SheetTitle>
           <SheetDescription>
-            Complete the form to create a new homestay.
+            Update the information for this homestay.
           </SheetDescription>
         </SheetHeader>
         
@@ -192,21 +223,28 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
           
           <div className="space-y-2">
             <Label htmlFor="user_id">Owner *</Label>
-            <select
-              id="user_id"
-              name="user_id"
-              value={formData.user_id}
-              onChange={handleInputChange}
-              className="w-full rounded-md border border-input bg-background p-2"
-              required
-            >
-              <option value="">Select owner</option>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name} ({user.email})
-                </option>
-              ))}
-            </select>
+            {loadingUsers ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading owners...</span>
+              </div>
+            ) : (
+              <select
+                id="user_id"
+                name="user_id"
+                value={formData.user_id}
+                onChange={handleInputChange}
+                className="w-full rounded-md border border-input bg-background p-2"
+                required
+              >
+                <option value="">Select owner</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -225,10 +263,25 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
             <textarea
               id="description"
               name="description"
-              value={formData.description || ''}
+              value={formData.description}
               onChange={handleInputChange}
               className="w-full min-h-[100px] rounded-md border border-input bg-background p-2"
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              className="w-full rounded-md border border-input bg-background p-2"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="suspended">Suspended</option>
+            </select>
           </div>
           
           <div className="space-y-2">
@@ -284,7 +337,7 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
             <Input
               id="contact_number"
               name="contact_number"
-              value={formData.contact_number || ''}
+              value={formData.contact_number}
               onChange={handleInputChange}
             />
           </div>
@@ -302,7 +355,39 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Imágenes</Label>
+            <Label>Imágenes Existentes</Label>
+            {existingImages.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {existingImages.map((image) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.img_url}
+                      alt="Imagen del homestay"
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => deleteExistingImage(image.id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      disabled={loading}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    {image.is_primary && (
+                      <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                        Principal
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No hay imágenes.</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Agregar Nuevas Imágenes</Label>
             <ImageUpload
               onImagesChange={setImages}
               maxImages={5}
@@ -318,9 +403,9 @@ export function CreateHomestayModal({ onSuccess }: CreateHomestayModalProps) {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Creating...
+                  Updating...
                 </>
-              ) : 'Create Homestay'}
+              ) : 'Update Homestay'}
             </Button>
           </SheetFooter>
         </form>

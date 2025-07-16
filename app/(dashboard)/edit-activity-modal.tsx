@@ -2,19 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Pencil, Loader2, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Pencil, Loader2, Trash2, Search, X, Settings, Image as ImageIcon, Users, MapPin, Calendar, DollarSign } from 'lucide-react';
 import { activities } from 'generated/prisma';
 
 // Interfaces
@@ -59,9 +61,14 @@ interface EditActivityModalProps {
 export function EditActivityModal({ activity, onSuccess }: EditActivityModalProps) {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [homestays, setHomestays] = useState<Homestay[]>([]);
+  const [filteredHomestays, setFilteredHomestays] = useState<Homestay[]>([]);
+  const [showHomestayDropdown, setShowHomestayDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('general');
   const [formData, setFormData] = useState({
     title: activity.title || '',
     description: activity.description || '',
@@ -90,41 +97,59 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
   const [error, setError] = useState('');
 
   const categories = [
-    { value: 'cultural', label: 'Cultural' },
-    { value: 'adventure', label: 'Adventure' },
-    { value: 'nature', label: 'Nature' },
-    { value: 'food_tour', label: 'Food Tour' },
-    { value: 'water_sports', label: 'Water Sports' },
-    { value: 'mountain_hiking', label: 'Mountain Hiking' },
-    { value: 'city_tour', label: 'City Tour' },
-    { value: 'religious', label: 'Religious' },
-    { value: 'art_craft', label: 'Art & Craft' },
-    { value: 'traditional_dance', label: 'Traditional Dance' },
-    { value: 'cooking_class', label: 'Cooking Class' },
-    { value: 'photography', label: 'Photography' },
-    { value: 'wellness', label: 'Wellness' },
-    { value: 'transportation', label: 'Transportation' },
-    { value: 'shopping', label: 'Shopping' },
-    { value: 'nightlife', label: 'Nightlife' },
-    { value: 'educational', label: 'Educational' },
-    { value: 'family_friendly', label: 'Family Friendly' },
-    { value: 'romantic', label: 'Romantic' },
-    { value: 'extreme_sports', label: 'Extreme Sports' }
+    { value: 'cultural', label: 'Cultural', icon: '🏛️' },
+    { value: 'adventure', label: 'Adventure', icon: '🏔️' },
+    { value: 'nature', label: 'Nature', icon: '🌿' },
+    { value: 'food_tour', label: 'Food Tour', icon: '🍜' },
+    { value: 'water_sports', label: 'Water Sports', icon: '🏄‍♂️' },
+    { value: 'mountain_hiking', label: 'Mountain Hiking', icon: '⛰️' },
+    { value: 'city_tour', label: 'City Tour', icon: '🏙️' },
+    { value: 'religious', label: 'Religious', icon: '🙏' },
+    { value: 'art_craft', label: 'Art & Craft', icon: '🎨' },
+    { value: 'traditional_dance', label: 'Traditional Dance', icon: '💃' },
+    { value: 'cooking_class', label: 'Cooking Class', icon: '👨‍🍳' },
+    { value: 'photography', label: 'Photography', icon: '📸' },
+    { value: 'wellness', label: 'Wellness', icon: '🧘‍♀️' },
+    { value: 'transportation', label: 'Transportation', icon: '🚗' },
+    { value: 'shopping', label: 'Shopping', icon: '🛍️' },
+    { value: 'nightlife', label: 'Nightlife', icon: '🌙' },
+    { value: 'educational', label: 'Educational', icon: '📚' },
+    { value: 'family_friendly', label: 'Family Friendly', icon: '👨‍👩‍👧‍👦' },
+    { value: 'romantic', label: 'Romantic', icon: '💕' },
+    { value: 'extreme_sports', label: 'Extreme Sports', icon: '🪂' }
   ];
 
   const difficultyLevels = [
-    { value: 'easy', label: 'Easy' },
-    { value: 'moderate', label: 'Moderate' },
-    { value: 'challenging', label: 'Challenging' },
-    { value: 'expert', label: 'Expert' }
+    { value: 'easy', label: 'Easy', color: 'bg-green-100 text-green-800' },
+    { value: 'moderate', label: 'Moderate', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'challenging', label: 'Challenging', color: 'bg-orange-100 text-orange-800' },
+    { value: 'expert', label: 'Expert', color: 'bg-red-100 text-red-800' }
   ];
 
   const statusOptions = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'suspended', label: 'Suspended' },
-    { value: 'draft', label: 'Draft' }
+    { value: 'active', label: 'Active', color: 'bg-green-500' },
+    { value: 'inactive', label: 'Inactive', color: 'bg-red-500' },
+    { value: 'suspended', label: 'Suspended', color: 'bg-gray-500' },
+    { value: 'draft', label: 'Draft', color: 'bg-yellow-500' }
   ];
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.user-search-container')) {
+        setShowUserDropdown(false);
+      }
+      if (!target.closest('.homestay-search-container')) {
+        setShowHomestayDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -138,6 +163,7 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
       const response = await fetch('/api/users');
       const data = await response.json();
       setUsers(data);
+      setFilteredUsers(data);
     } catch (error) {
       console.error('Error loading users:', error);
     }
@@ -148,6 +174,7 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
       const response = await fetch('/api/homestay');
       const data = await response.json();
       setHomestays(data);
+      setFilteredHomestays(data);
     } catch (error) {
       console.error('Error loading homestays:', error);
     }
@@ -244,371 +271,634 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
     }
   };
 
+  const getCategoryIcon = (categoryValue: string) => {
+    const category = categories.find(cat => cat.value === categoryValue);
+    return category?.icon || '🎯';
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    const level = difficultyLevels.find(level => level.value === difficulty);
+    return level?.color || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusColor = (status: string) => {
+    const statusOption = statusOptions.find(option => option.value === status);
+    return statusOption?.color || 'bg-gray-500';
+  };
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
           <Pencil className="h-4 w-4" />
         </Button>
-      </SheetTrigger>
-      <SheetContent className="sm:max-w-[540px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Edit Activity</SheetTitle>
-          <SheetDescription>
-            Update the activity details
-          </SheetDescription>
-        </SheetHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                name="title"
-                placeholder="Activity name"
-                value={formData.title}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <span>Edit Activity</span>
+            <Badge variant="outline" className="ml-2">
+              ID: {activity.id}
+            </Badge>
+          </DialogTitle>
+          <DialogDescription>
+            Update the activity details and settings
+          </DialogDescription>
+        </DialogHeader>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                required
-              >
-                <option value="">Select a category</option>
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                {statusOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">Price (IDR) *</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  placeholder="150000"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="duration_minutes">Duration (minutes)</Label>
-                <Input
-                  id="duration_minutes"
-                  name="duration_minutes"
-                  type="number"
-                  placeholder="120"
-                  value={formData.duration_minutes}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="max_participants">Max Participants *</Label>
-                <Input
-                  id="max_participants"
-                  name="max_participants"
-                  type="number"
-                  placeholder="10"
-                  value={formData.max_participants}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="min_participants">Min Participants</Label>
-                <Input
-                  id="min_participants"
-                  name="min_participants"
-                  type="number"
-                  placeholder="1"
-                  value={formData.min_participants}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                name="location"
-                placeholder="Ubud, Bali"
-                value={formData.location}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                name="address"
-                placeholder="Complete address"
-                value={formData.address}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="difficulty_level">Difficulty Level</Label>
-              <select
-                id="difficulty_level"
-                name="difficulty_level"
-                value={formData.difficulty_level}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                {difficultyLevels.map(level => (
-                  <option key={level.value} value={level.value}>{level.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="homestay_id">Associated Homestay</Label>
-              <select
-                id="homestay_id"
-                name="homestay_id"
-                value={formData.homestay_id}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Select a homestay</option>
-                {homestays.map(homestay => (
-                  <option key={homestay.id} value={homestay.id}>{homestay.title}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="manager_id">Manager</Label>
-              <select
-                id="manager_id"
-                name="manager_id"
-                value={formData.manager_id}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Select a manager</option>
-                {users.map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="short_description">Short Description</Label>
-              <textarea
-                id="short_description"
-                name="short_description"
-                rows={3}
-                placeholder="Brief description of the activity"
-                value={formData.short_description}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                name="description"
-                rows={4}
-                placeholder="Detailed description of the activity"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contact_phone">Contact Phone</Label>
-              <Input
-                id="contact_phone"
-                name="contact_phone"
-                placeholder="+62 812 3456 7890"
-                value={formData.contact_phone}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contact_email">Contact Email</Label>
-              <Input
-                id="contact_email"
-                name="contact_email"
-                type="email"
-                placeholder="contact@activity.com"
-                value={formData.contact_email}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="meeting_point">Meeting Point</Label>
-              <Input
-                id="meeting_point"
-                name="meeting_point"
-                placeholder="Meeting point with participants"
-                value={formData.meeting_point}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="age_restriction">Age Restriction</Label>
-              <Input
-                id="age_restriction"
-                name="age_restriction"
-                placeholder="E.g: 18+ or 12-65 years"
-                value={formData.age_restriction}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="includes">Includes</Label>
-              <textarea
-                id="includes"
-                name="includes"
-                rows={3}
-                placeholder="What the activity includes"
-                value={formData.includes}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="excludes">Excludes</Label>
-              <textarea
-                id="excludes"
-                name="excludes"
-                rows={3}
-                placeholder="What the activity excludes"
-                value={formData.excludes}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="requirements">Requirements</Label>
-              <textarea
-                id="requirements"
-                name="requirements"
-                rows={3}
-                placeholder="Requirements to participate"
-                value={formData.requirements}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
-              <textarea
-                id="cancellation_policy"
-                name="cancellation_policy"
-                rows={3}
-                placeholder="Cancellation policy"
-                value={formData.cancellation_policy}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                id="is_featured"
-                name="is_featured"
-                type="checkbox"
-                checked={formData.is_featured}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <Label htmlFor="is_featured">Featured Activity</Label>
-            </div>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
           </div>
+        )}
 
-          <SheetFooter className="flex justify-between">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="general" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">General</span>
+            </TabsTrigger>
+            <TabsTrigger value="details" className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Details</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">Pricing</span>
+            </TabsTrigger>
+            <TabsTrigger value="images" className="flex items-center space-x-2">
+              <ImageIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Images</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-6">
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Basic Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title *</Label>
+                      <Input
+                        id="title"
+                        name="title"
+                        placeholder="Activity name"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category *</Label>
+                                             <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value as any})}>
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select a category" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {categories.map(cat => (
+                             <SelectItem key={cat.value} value={cat.value}>
+                               <div className="flex items-center space-x-2">
+                                 <span>{cat.icon}</span>
+                                 <span>{cat.label}</span>
+                               </div>
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                    </div>
+
+                                         <div className="space-y-2">
+                       <Label htmlFor="status">Status</Label>
+                       <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value as any})}>
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select status" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {statusOptions.map(option => (
+                             <SelectItem key={option.value} value={option.value}>
+                               <div className="flex items-center space-x-2">
+                                 <div className={`w-2 h-2 rounded-full ${option.color}`}></div>
+                                 <span>{option.label}</span>
+                               </div>
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+
+                                         <div className="space-y-2">
+                       <Label htmlFor="difficulty_level">Difficulty Level</Label>
+                       <Select value={formData.difficulty_level} onValueChange={(value) => setFormData({...formData, difficulty_level: value as any})}>
+                         <SelectTrigger>
+                           <SelectValue placeholder="Select difficulty" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {difficultyLevels.map(level => (
+                             <SelectItem key={level.value} value={level.value}>
+                               <div className="flex items-center space-x-2">
+                                 <Badge variant="outline" className={level.color}>
+                                   {level.label}
+                                 </Badge>
+                               </div>
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+                  </CardContent>
+                </Card>
+
+                {/* Location & Contact */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Location & Contact</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location *</Label>
+                      <Input
+                        id="location"
+                        name="location"
+                        placeholder="Ubud, Bali"
+                        value={formData.location}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address</Label>
+                      <Input
+                        id="address"
+                        name="address"
+                        placeholder="Complete address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="meeting_point">Meeting Point</Label>
+                      <Input
+                        id="meeting_point"
+                        name="meeting_point"
+                        placeholder="Meeting point with participants"
+                        value={formData.meeting_point}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_phone">Contact Phone</Label>
+                      <Input
+                        id="contact_phone"
+                        name="contact_phone"
+                        placeholder="+62 812 3456 7890"
+                        value={formData.contact_phone}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_email">Contact Email</Label>
+                      <Input
+                        id="contact_email"
+                        name="contact_email"
+                        type="email"
+                        placeholder="contact@activity.com"
+                        value={formData.contact_email}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Assignments */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg">Assignments</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="manager_id">Manager</Label>
+                      <div className="relative user-search-container">
+                        <Input
+                          id="manager_search"
+                          placeholder="Search manager by name or email..."
+                          className="w-full"
+                          onFocus={() => setShowUserDropdown(true)}
+                          onChange={(e) => {
+                            const searchTerm = e.target.value.toLowerCase();
+                            if (searchTerm.trim() === '') {
+                              setFilteredUsers(users);
+                            } else {
+                              const filtered = users.filter((user: User) => 
+                                user.name.toLowerCase().includes(searchTerm) ||
+                                user.email.toLowerCase().includes(searchTerm)
+                              );
+                              setFilteredUsers(filtered);
+                            }
+                          }}
+                        />
+                        {showUserDropdown && filteredUsers.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {filteredUsers.map((user: User) => (
+                              <div
+                                key={user.id}
+                                className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                                  formData.manager_id === user.id.toString() ? 'bg-blue-50' : ''
+                                }`}
+                                onClick={() => {
+                                  setFormData({...formData, manager_id: user.id.toString()});
+                                  setShowUserDropdown(false);
+                                }}
+                              >
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {formData.manager_id && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded border">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm">
+                                <span className="font-medium">Selected:</span>
+                                <div className="text-gray-600">
+                                  {users.find((u: User) => u.id.toString() === formData.manager_id)?.name} 
+                                  ({users.find((u: User) => u.id.toString() === formData.manager_id)?.email})
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFormData({...formData, manager_id: ''})}
+                                className="h-6 w-6 p-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="homestay_id">Associated Homestay</Label>
+                      <div className="relative homestay-search-container">
+                        <Input
+                          id="homestay_search"
+                          placeholder="Search homestay by title..."
+                          className="w-full"
+                          onFocus={() => setShowHomestayDropdown(true)}
+                          onChange={(e) => {
+                            const searchTerm = e.target.value.toLowerCase();
+                            if (searchTerm.trim() === '') {
+                              setFilteredHomestays(homestays);
+                            } else {
+                              const filtered = homestays.filter((homestay: Homestay) => 
+                                homestay.title.toLowerCase().includes(searchTerm) ||
+                                homestay.location.toLowerCase().includes(searchTerm)
+                              );
+                              setFilteredHomestays(filtered);
+                            }
+                          }}
+                        />
+                        {showHomestayDropdown && filteredHomestays.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {filteredHomestays.map((homestay: Homestay) => (
+                              <div
+                                key={homestay.id}
+                                className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                                  formData.homestay_id === homestay.id.toString() ? 'bg-blue-50' : ''
+                                }`}
+                                onClick={() => {
+                                  setFormData({...formData, homestay_id: homestay.id.toString()});
+                                  setShowHomestayDropdown(false);
+                                }}
+                              >
+                                <div className="font-medium">{homestay.title}</div>
+                                <div className="text-sm text-gray-500">{homestay.location}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {formData.homestay_id && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded border">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm">
+                                <span className="font-medium">Selected:</span>
+                                <div className="text-gray-600">
+                                  {homestays.find((h: Homestay) => h.id.toString() === formData.homestay_id)?.title} 
+                                  ({homestays.find((h: Homestay) => h.id.toString() === formData.homestay_id)?.location})
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFormData({...formData, homestay_id: ''})}
+                                className="h-6 w-6 p-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Featured Activity */}
+              <Card className="mt-6">
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="is_featured"
+                      name="is_featured"
+                      type="checkbox"
+                      checked={formData.is_featured}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <Label htmlFor="is_featured">Featured Activity</Label>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="details" className="space-y-6">
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Descriptions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Descriptions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="short_description">Short Description</Label>
+                      <textarea
+                        id="short_description"
+                        name="short_description"
+                        rows={3}
+                        placeholder="Brief description of the activity"
+                        value={formData.short_description}
+                        onChange={handleInputChange}
+                        className="w-full min-h-[80px] rounded-md border border-input bg-background p-3 resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Full Description</Label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        rows={6}
+                        placeholder="Detailed description of the activity"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        className="w-full min-h-[120px] rounded-md border border-input bg-background p-3 resize-none"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Requirements & Policies */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Requirements & Policies</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="age_restriction">Age Restriction</Label>
+                      <Input
+                        id="age_restriction"
+                        name="age_restriction"
+                        placeholder="E.g: 18+ or 12-65 years"
+                        value={formData.age_restriction}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="requirements">Requirements</Label>
+                      <textarea
+                        id="requirements"
+                        name="requirements"
+                        rows={3}
+                        placeholder="Requirements to participate"
+                        value={formData.requirements}
+                        onChange={handleInputChange}
+                        className="w-full min-h-[80px] rounded-md border border-input bg-background p-3 resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
+                      <textarea
+                        id="cancellation_policy"
+                        name="cancellation_policy"
+                        rows={3}
+                        placeholder="Cancellation policy"
+                        value={formData.cancellation_policy}
+                        onChange={handleInputChange}
+                        className="w-full min-h-[80px] rounded-md border border-input bg-background p-3 resize-none"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* What's Included/Excluded */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg">What's Included & Excluded</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="includes">What's Included</Label>
+                      <textarea
+                        id="includes"
+                        name="includes"
+                        rows={4}
+                        placeholder="What the activity includes"
+                        value={formData.includes}
+                        onChange={handleInputChange}
+                        className="w-full min-h-[100px] rounded-md border border-input bg-background p-3 resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="excludes">What's Excluded</Label>
+                      <textarea
+                        id="excludes"
+                        name="excludes"
+                        rows={4}
+                        placeholder="What the activity excludes"
+                        value={formData.excludes}
+                        onChange={handleInputChange}
+                        className="w-full min-h-[100px] rounded-md border border-input bg-background p-3 resize-none"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-6">
+            <form onSubmit={handleSubmit}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Pricing & Capacity</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Price (IDR) *</Label>
+                      <Input
+                        id="price"
+                        name="price"
+                        type="number"
+                        placeholder="150000"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="duration_minutes">Duration (minutes)</Label>
+                      <Input
+                        id="duration_minutes"
+                        name="duration_minutes"
+                        type="number"
+                        placeholder="120"
+                        value={formData.duration_minutes}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="age_restriction">Age Restriction</Label>
+                      <Input
+                        id="age_restriction"
+                        name="age_restriction"
+                        placeholder="E.g: 18+ or 12-65 years"
+                        value={formData.age_restriction}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="max_participants">Max Participants *</Label>
+                      <Input
+                        id="max_participants"
+                        name="max_participants"
+                        type="number"
+                        placeholder="10"
+                        value={formData.max_participants}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="min_participants">Min Participants</Label>
+                      <Input
+                        id="min_participants"
+                        name="min_participants"
+                        type="number"
+                        placeholder="1"
+                        value={formData.min_participants}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="images" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Activity Images</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12">
+                  <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Image management coming soon</h3>
+                  <p className="text-gray-500">
+                    You'll be able to upload and manage activity images here.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Footer Actions */}
+        <div className="flex justify-between items-center pt-6 border-t">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Activity
+              </>
+            )}
+          </Button>
+          <div className="flex space-x-2">
             <Button
               type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteLoading}
+              variant="outline"
+              onClick={() => setOpen(false)}
             >
-              {deleteLoading ? (
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Saving...
                 </>
               ) : (
-                <>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </>
+                'Save Changes'
               )}
             </Button>
-            <div className="flex space-x-2">
-              <SheetClose asChild>
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              </SheetClose>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </Button>
-            </div>
-          </SheetFooter>
-        </form>
-      </SheetContent>
-    </Sheet>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 } 

@@ -17,7 +17,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Loader2, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Pencil, Bed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { homestay } from 'generated/prisma';
@@ -105,18 +105,18 @@ export function HomestaysTable({
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Price</TableHead>
-                <TableHead className="hidden md:table-cell">Guests</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
+                              <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Price</TableHead>
+                  <TableHead className="hidden md:table-cell">Guests</TableHead>
+                  <TableHead className="hidden md:table-cell">Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
             </TableHeader>
             <TableBody>
               {homestays.map((homestay) => (
@@ -132,7 +132,7 @@ export function HomestaysTable({
                     </span>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {homestay.base_price ? `$${homestay.base_price}` : '-'}
+                    {homestay.base_price ? `IDR ${homestay.base_price}` : '-'}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {homestay.max_guests || '-'}
@@ -141,13 +141,24 @@ export function HomestaysTable({
                     {new Date(homestay.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/homestays/${homestay.id}/edit`)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/homestays/${homestay.id}/edit`)}
+                        title="Edit homestay"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/homestays/${homestay.id}/edit?tab=rooms`)}
+                        title="Manage rooms"
+                      >
+                        <Bed className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

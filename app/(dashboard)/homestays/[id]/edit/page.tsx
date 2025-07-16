@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Plus, Trash2, Pencil } from 'lucide-react';
+import { Loader2, Upload, Plus, Trash2, Pencil, X, Settings } from 'lucide-react';
 import { homestay, homestayImages, homestayRoom, room_features } from 'generated/prisma';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface User {
   id: number;
@@ -50,17 +52,443 @@ interface RoomFormData {
   features: number[];
 }
 
+interface FeatureFormData {
+  title: string;
+  description: string;
+  symbol: string;
+  category: string;
+}
+
+// Component for room editing modal
+function RoomEditModal({ 
+  room, 
+  roomFeatures, 
+  onSave, 
+  onClose, 
+  isOpen,
+  onAddFeature
+}: { 
+  room?: (homestayRoom & {
+    relation_feature_room: {
+      room_features: room_features;
+    }[];
+  }) | null;
+  roomFeatures: RoomFeature[];
+  onSave: (roomData: RoomFormData) => Promise<void>;
+  onClose: () => void;
+  isOpen: boolean;
+  onAddFeature: () => void;
+}) {
+  const [selectedFeatures, setSelectedFeatures] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (room) {
+      setSelectedFeatures(room.relation_feature_room.map(rf => rf.room_features.id));
+    } else {
+      setSelectedFeatures([]);
+    }
+  }, [room]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const formData = new FormData(e.currentTarget);
+      const roomData: RoomFormData = {
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        room_number: formData.get('room_number') as string,
+        number_people: parseInt(formData.get('number_people') as string),
+        max_occupancy: parseInt(formData.get('max_occupancy') as string),
+        price: parseFloat(formData.get('price') as string),
+        currency: formData.get('currency') as string,
+        size: formData.get('size') as string,
+        features: selectedFeatures
+      };
+      
+      await onSave(roomData);
+      onClose();
+    } catch (error) {
+      console.error('Error saving room:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleFeature = (featureId: number) => {
+    setSelectedFeatures(prev => 
+      prev.includes(featureId) 
+        ? prev.filter(id => id !== featureId)
+        : [...prev, featureId]
+    );
+  };
+
+  // Group features by category
+  const groupedFeatures = roomFeatures.reduce((acc, feature) => {
+    if (!acc[feature.category]) {
+      acc[feature.category] = [];
+    }
+    acc[feature.category].push(feature);
+    return acc;
+  }, {} as Record<string, RoomFeature[]>);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            {room ? 'Edit Room' : 'Add New Room'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                name="title"
+                defaultValue={room?.title || ''}
+                required
+                placeholder="e.g., Deluxe Room"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="room_number">Room Number</Label>
+              <Input
+                id="room_number"
+                name="room_number"
+                defaultValue={room?.room_number || ''}
+                placeholder="e.g., 101"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <textarea
+              id="description"
+              name="description"
+              defaultValue={room?.description || ''}
+              className="w-full min-h-[120px] rounded-md border border-input bg-background p-3 resize-none"
+              placeholder="Describe the room features and amenities..."
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="number_people">Capacity *</Label>
+              <Input
+                id="number_people"
+                name="number_people"
+                type="number"
+                min="1"
+                defaultValue={room?.number_people || 1}
+                required
+                placeholder="1"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="max_occupancy">Max Occupancy *</Label>
+              <Input
+                id="max_occupancy"
+                name="max_occupancy"
+                type="number"
+                min="1"
+                defaultValue={room?.max_occupancy || 1}
+                required
+                placeholder="2"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="size">Size</Label>
+              <Input
+                id="size"
+                name="size"
+                defaultValue={room?.size || ''}
+                placeholder="e.g., 30m²"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="price">Price *</Label>
+              <Input
+                id="price"
+                name="price"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={room?.price.toString() || ''}
+                required
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <select
+                id="currency"
+                name="currency"
+                className="w-full rounded-md border border-input bg-background p-3"
+                defaultValue={room?.currency || 'IDR'}
+              >
+                <option value="IDR">IDR (Indonesian Rupiah)</option>
+                <option value="USD">USD (US Dollar)</option>
+                <option value="EUR">EUR (Euro)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Room Features</Label>
+              {roomFeatures.length === 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onAddFeature}
+                  className="text-xs"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Features
+                </Button>
+              )}
+            </div>
+            <div className="max-h-64 overflow-y-auto border rounded-md p-4">
+              {roomFeatures.length > 0 ? (
+                Object.entries(groupedFeatures).map(([category, features]) => (
+                  <div key={category} className="mb-4">
+                    <h4 className="font-medium text-sm text-gray-700 mb-2 capitalize">
+                      {category.replace('_', ' ')}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {features.map((feature) => (
+                        <div key={feature.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`feature-${feature.id}`}
+                            checked={selectedFeatures.includes(feature.id)}
+                            onCheckedChange={() => toggleFeature(feature.id)}
+                          />
+                          <Label 
+                            htmlFor={`feature-${feature.id}`}
+                            className="text-sm cursor-pointer flex items-center space-x-2"
+                          >
+                            {feature.symbol && (
+                              <span className="text-lg">{feature.symbol}</span>
+                            )}
+                            <span>{feature.title}</span>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                    <Settings className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">No room features available</h4>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Add room features to enhance your room descriptions
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onAddFeature}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add First Feature
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : room ? 'Update Room' : 'Add Room'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Component for managing room features
+function RoomFeaturesModal({ 
+  roomFeatures, 
+  onSave, 
+  onClose, 
+  isOpen 
+}: { 
+  roomFeatures: RoomFeature[];
+  onSave: (featureData: FeatureFormData) => Promise<void>;
+  onClose: () => void;
+  isOpen: boolean;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const formData = new FormData(e.currentTarget);
+      const featureData: FeatureFormData = {
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        symbol: formData.get('symbol') as string,
+        category: formData.get('category') as string
+      };
+      
+      await onSave(featureData);
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error('Error saving feature:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const featureCategories = [
+    'bedroom', 'bathroom', 'kitchen', 'entertainment', 'comfort', 
+    'safety', 'accessibility', 'outdoor', 'service', 'storage', 
+    'view', 'dining', 'business', 'wellness', 'transportation'
+  ];
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add New Room Feature</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              name="title"
+              required
+              placeholder="e.g., Air Conditioning"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <textarea
+              id="description"
+              name="description"
+              className="w-full min-h-[80px] rounded-md border border-input bg-background p-2 resize-none"
+              placeholder="Brief description of the feature..."
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="symbol">Symbol/Icon</Label>
+            <Input
+              id="symbol"
+              name="symbol"
+              placeholder="e.g., ❄️, 🛏️, 🚿"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="category">Category *</Label>
+            <select
+              id="category"
+              name="category"
+              className="w-full rounded-md border border-input bg-background p-2"
+              required
+            >
+              <option value="">Select category</option>
+              {featureCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Adding...
+                </>
+              ) : 'Add Feature'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EditHomestayPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
   const [homestay, setHomestay] = useState<Homestay | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [roomFeatures, setRoomFeatures] = useState<RoomFeature[]>([]);
   const [selectedTab, setSelectedTab] = useState('general');
-  const [openRoomDialog, setOpenRoomDialog] = useState(false);
+  
+  // Detect if should open directly in rooms tab
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam === 'rooms') {
+        setSelectedTab('rooms');
+      }
+    }
+  }, []);
+  
+  const [roomModalOpen, setRoomModalOpen] = useState(false);
+  const [featuresModalOpen, setFeaturesModalOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<(homestayRoom & {
+    relation_feature_room: {
+      room_features: room_features;
+    }[];
+  }) | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -80,6 +508,21 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
     fetchUsers();
     fetchRoomFeatures();
   }, [id]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.user-search-container')) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchHomestay = async () => {
     try {
@@ -111,6 +554,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
       const response = await fetch('/api/users');
       const data = await response.json();
       setUsers(data);
+      setFilteredUsers(data);
     } catch (error) {
       console.error('Error loading users:', error);
       setError('Error loading users');
@@ -264,7 +708,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
       }
 
       fetchHomestay();
-      setOpenRoomDialog(false);
+      setRoomModalOpen(false);
       
     } catch (error) {
       console.error('Error creating room:', error);
@@ -287,6 +731,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
       }
 
       fetchHomestay();
+      setEditingRoom(null);
     } catch (error) {
       console.error('Error updating room:', error);
       setError('Error updating room');
@@ -294,6 +739,10 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
   };
 
   const handleDeleteRoom = async (roomId: number) => {
+    if (!confirm('Are you sure you want to delete this room?')) {
+      return;
+    }
+    
     try {
       await fetch(`/api/homestay/${id}/rooms?roomId=${roomId}`, {
         method: 'DELETE'
@@ -302,6 +751,56 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
     } catch (error) {
       console.error('Error deleting room:', error);
       setError('Error deleting room');
+    }
+  };
+
+  const handleCreateFeature = async (featureData: FeatureFormData) => {
+    try {
+      const response = await fetch('/api/room-features', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(featureData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error creating feature');
+      }
+
+      fetchRoomFeatures();
+      setFeaturesModalOpen(false);
+      
+    } catch (error) {
+      console.error('Error creating feature:', error);
+      setError('Error creating feature');
+    }
+  };
+
+  const openEditRoomModal = (room: homestayRoom & {
+    relation_feature_room: {
+      room_features: room_features;
+    }[];
+  }) => {
+    setEditingRoom(room);
+    setRoomModalOpen(true);
+  };
+
+  const openCreateRoomModal = () => {
+    setEditingRoom(null);
+    setRoomModalOpen(true);
+  };
+
+  const closeRoomModal = () => {
+    setRoomModalOpen(false);
+    setEditingRoom(null);
+  };
+
+  const handleRoomSave = async (roomData: RoomFormData) => {
+    if (editingRoom) {
+      await handleUpdateRoom(editingRoom.id, roomData);
+    } else {
+      await handleCreateRoom(roomData);
     }
   };
 
@@ -315,7 +814,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="container mx-auto py-10">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Edit Homestay</h1>
         
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
@@ -323,6 +822,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
             <TabsTrigger value="rooms">Rooms</TabsTrigger>
+            <TabsTrigger value="features">Room Features</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -341,21 +841,67 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
                     <span>Loading owners...</span>
                   </div>
                 ) : (
-                  <select
-                    id="user_id"
-                    name="user_id"
-                    value={formData.user_id}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border border-input bg-background p-2"
-                    required
-                  >
-                    <option value="">Select owner</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.email})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative user-search-container">
+                    <Input
+                      id="user_search"
+                      placeholder="Search by name or email..."
+                      className="w-full"
+                      onFocus={() => setShowUserDropdown(true)}
+                      onChange={(e) => {
+                        const searchTerm = e.target.value.toLowerCase();
+                        if (searchTerm.trim() === '') {
+                          setFilteredUsers(users);
+                        } else {
+                          const filtered = users.filter((user: User) => 
+                            user.name.toLowerCase().includes(searchTerm) ||
+                            user.email.toLowerCase().includes(searchTerm)
+                          );
+                          setFilteredUsers(filtered);
+                        }
+                      }}
+                    />
+                    {showUserDropdown && filteredUsers.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {filteredUsers.map((user: User) => (
+                          <div
+                            key={user.id}
+                            className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                              formData.user_id === user.id.toString() ? 'bg-blue-50' : ''
+                            }`}
+                            onClick={() => {
+                              setFormData({...formData, user_id: user.id.toString()});
+                              setShowUserDropdown(false);
+                            }}
+                          >
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {formData.user_id && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded border">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">
+                            <span className="font-medium">Selected:</span>
+                            <div className="text-gray-600">
+                              {users.find((u: User) => u.id.toString() === formData.user_id)?.name} 
+                              ({users.find((u: User) => u.id.toString() === formData.user_id)?.email})
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setFormData({...formData, user_id: ''})}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               
@@ -565,319 +1111,69 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Rooms</CardTitle>
-                <Dialog open={openRoomDialog} onOpenChange={setOpenRoomDialog}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Room
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Room</DialogTitle>
-                    </DialogHeader>
-                    <form
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        const formData = new FormData(e.currentTarget);
-                        const roomData: RoomFormData = {
-                          title: formData.get('title') as string,
-                          description: formData.get('description') as string,
-                          room_number: formData.get('room_number') as string,
-                          number_people: parseInt(formData.get('number_people') as string),
-                          max_occupancy: parseInt(formData.get('max_occupancy') as string),
-                          price: parseFloat(formData.get('price') as string),
-                          currency: formData.get('currency') as string,
-                          size: formData.get('size') as string,
-                          features: roomFeatures
-                            .filter(f => f.selected)
-                            .map(f => f.id)
-                        };
-                        await handleCreateRoom(roomData);
-                        (e.target as HTMLFormElement).reset();
-                      }}
-                      className="space-y-4"
+                <div className="flex space-x-2">
+                  {roomFeatures.length === 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setFeaturesModalOpen(true)}
+                      className="text-sm"
                     >
-                      <div className="space-y-2">
-                        <Label htmlFor="title">Title *</Label>
-                        <Input id="title" name="title" required />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <textarea
-                          id="description"
-                          name="description"
-                          className="w-full min-h-[100px] rounded-md border border-input bg-background p-2"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="room_number">Room Number</Label>
-                        <Input id="room_number" name="room_number" />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="number_people">Number of People *</Label>
-                          <Input
-                            id="number_people"
-                            name="number_people"
-                            type="number"
-                            min="1"
-                            required
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="max_occupancy">Max Occupancy *</Label>
-                          <Input
-                            id="max_occupancy"
-                            name="max_occupancy"
-                            type="number"
-                            min="1"
-                            required
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="price">Price *</Label>
-                          <Input
-                            id="price"
-                            name="price"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            required
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="currency">Currency</Label>
-                          <select
-                            id="currency"
-                            name="currency"
-                            className="w-full rounded-md border border-input bg-background p-2"
-                            defaultValue="IDR"
-                          >
-                            <option value="IDR">IDR</option>
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                          </select>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="size">Size</Label>
-                        <Input id="size" name="size" placeholder="e.g., 30m²" />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Features</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {roomFeatures.map((feature) => (
-                            <div key={feature.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`feature-${feature.id}`}
-                                checked={feature.selected}
-                                onCheckedChange={(checked: boolean) => {
-                                  setRoomFeatures(features =>
-                                    features.map(f =>
-                                      f.id === feature.id
-                                        ? { ...f, selected: checked }
-                                        : f
-                                    )
-                                  );
-                                }}
-                              />
-                              <Label htmlFor={`feature-${feature.id}`}>
-                                {feature.title}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <Button type="submit">Add Room</Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Add Features First
+                    </Button>
+                  )}
+                  <Button onClick={openCreateRoomModal}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Room
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
+                {roomFeatures.length === 0 && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <Settings className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-blue-900 mb-1">
+                          No room features available
+                        </h4>
+                        <p className="text-sm text-blue-700 mb-3">
+                          Add room features first to enhance your room descriptions and make them more attractive to guests.
+                        </p>
+                        <Button
+                          size="sm"
+                          onClick={() => setFeaturesModalOpen(true)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Room Features
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {homestay?.homestayRoom?.length ? (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {homestay.homestayRoom.map((room) => (
-                      <Card key={room.id}>
-                        <CardContent className="pt-6">
+                      <Card key={room.id} className="hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-3">
                           <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold">{room.title}</h3>
-                              <p className="text-sm text-gray-500">{room.description}</p>
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">{room.title}</CardTitle>
+                              {room.room_number && (
+                                <p className="text-sm text-muted-foreground">
+                                  Room #{room.room_number}
+                                </p>
+                              )}
                             </div>
                             <div className="flex space-x-2">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Room</DialogTitle>
-                                  </DialogHeader>
-                                  <form
-                                    onSubmit={async (e) => {
-                                      e.preventDefault();
-                                      const formData = new FormData(e.currentTarget);
-                                      const roomData: RoomFormData = {
-                                        title: formData.get('title') as string,
-                                        description: formData.get('description') as string,
-                                        room_number: formData.get('room_number') as string,
-                                        number_people: parseInt(formData.get('number_people') as string),
-                                        max_occupancy: parseInt(formData.get('max_occupancy') as string),
-                                        price: parseFloat(formData.get('price') as string),
-                                        currency: formData.get('currency') as string,
-                                        size: formData.get('size') as string,
-                                        features: roomFeatures
-                                          .filter(f => f.selected)
-                                          .map(f => f.id)
-                                      };
-                                      await handleUpdateRoom(room.id, roomData);
-                                    }}
-                                    className="space-y-4"
-                                  >
-                                    <div className="space-y-2">
-                                      <Label htmlFor="title">Title *</Label>
-                                      <Input
-                                        id="title"
-                                        name="title"
-                                        defaultValue={room.title}
-                                        required
-                                      />
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor="description">Description</Label>
-                                      <textarea
-                                        id="description"
-                                        name="description"
-                                        defaultValue={room.description || ''}
-                                        className="w-full min-h-[100px] rounded-md border border-input bg-background p-2"
-                                      />
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor="room_number">Room Number</Label>
-                                      <Input
-                                        id="room_number"
-                                        name="room_number"
-                                        defaultValue={room.room_number || ''}
-                                      />
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-2">
-                                        <Label htmlFor="number_people">Number of People *</Label>
-                                        <Input
-                                          id="number_people"
-                                          name="number_people"
-                                          type="number"
-                                          min="1"
-                                          defaultValue={room.number_people}
-                                          required
-                                        />
-                                      </div>
-                                      
-                                      <div className="space-y-2">
-                                        <Label htmlFor="max_occupancy">Max Occupancy *</Label>
-                                        <Input
-                                          id="max_occupancy"
-                                          name="max_occupancy"
-                                          type="number"
-                                          min="1"
-                                          defaultValue={room.max_occupancy}
-                                          required
-                                        />
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-2">
-                                        <Label htmlFor="price">Price *</Label>
-                                        <Input
-                                          id="price"
-                                          name="price"
-                                          type="number"
-                                          min="0"
-                                          step="0.01"
-                                          defaultValue={room.price.toString()}
-                                          required
-                                        />
-                                      </div>
-                                      
-                                      <div className="space-y-2">
-                                        <Label htmlFor="currency">Currency</Label>
-                                        <select
-                                          id="currency"
-                                          name="currency"
-                                          className="w-full rounded-md border border-input bg-background p-2"
-                                          defaultValue={room.currency}
-                                        >
-                                          <option value="IDR">IDR</option>
-                                          <option value="USD">USD</option>
-                                          <option value="EUR">EUR</option>
-                                        </select>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor="size">Size</Label>
-                                      <Input
-                                        id="size"
-                                        name="size"
-                                        defaultValue={room.size || ''}
-                                        placeholder="e.g., 30m²"
-                                      />
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label>Features</Label>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        {roomFeatures.map((feature) => (
-                                          <div key={feature.id} className="flex items-center space-x-2">
-                                            <Checkbox
-                                              id={`feature-${feature.id}`}
-                                              checked={room.relation_feature_room.some(
-                                                rf => rf.room_features.id === feature.id
-                                              )}
-                                              onCheckedChange={(checked: boolean) => {
-                                                setRoomFeatures(features =>
-                                                  features.map(f =>
-                                                    f.id === feature.id
-                                                      ? { ...f, selected: checked }
-                                                      : f
-                                                  )
-                                                );
-                                              }}
-                                            />
-                                            <Label htmlFor={`feature-${feature.id}`}>
-                                              {feature.title}
-                                            </Label>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex justify-end">
-                                      <Button type="submit">Update Room</Button>
-                                    </div>
-                                  </form>
-                                </DialogContent>
-                              </Dialog>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditRoomModal(room)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
@@ -887,62 +1183,147 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
                               </Button>
                             </div>
                           </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          {room.description && (
+                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                              {room.description}
+                            </p>
+                          )}
                           
-                          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="font-medium">Room Number:</span>{' '}
-                              {room.room_number || 'N/A'}
+                          <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="text-sm">
+                              <span className="font-medium">Capacity:</span>
+                              <p className="text-muted-foreground">{room.number_people} people</p>
                             </div>
-                            <div>
-                              <span className="font-medium">Size:</span>{' '}
-                              {room.size || 'N/A'}
+                            <div className="text-sm">
+                              <span className="font-medium">Max Occupancy:</span>
+                              <p className="text-muted-foreground">{room.max_occupancy} people</p>
                             </div>
-                            <div>
-                              <span className="font-medium">Capacity:</span>{' '}
-                              {room.number_people} people
+                            <div className="text-sm">
+                              <span className="font-medium">Price:</span>
+                              <p className="text-muted-foreground">
+                                {room.currency} {room.price.toLocaleString()}
+                              </p>
                             </div>
-                            <div>
-                              <span className="font-medium">Max Occupancy:</span>{' '}
-                              {room.max_occupancy} people
-                            </div>
-                            <div>
-                              <span className="font-medium">Price:</span>{' '}
-                              {room.currency} {room.price.toString()}
-                            </div>
-                            <div>
-                              <span className="font-medium">Status:</span>{' '}
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                room.status === 'available'
-                                  ? 'bg-green-100 text-green-800'
-                                  : room.status === 'occupied'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {room.status.charAt(0).toUpperCase() + room.status.slice(1)}
-                              </span>
+                            <div className="text-sm">
+                              <span className="font-medium">Size:</span>
+                              <p className="text-muted-foreground">{room.size || 'N/A'}</p>
                             </div>
                           </div>
                           
-                          <div className="mt-4">
-                            <h4 className="font-medium mb-2">Features:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {room.relation_feature_room?.map((rf) => (
-                                <span
-                                  key={rf.room_features.id}
-                                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                >
-                                  {rf.room_features.title}
-                                </span>
-                              ))}
-                            </div>
+                          <div className="flex items-center justify-between">
+                            <Badge 
+                              variant={
+                                room.status === 'available' ? 'default' :
+                                room.status === 'occupied' ? 'destructive' : 'secondary'
+                              }
+                            >
+                              {room.status === 'available' ? 'Available' :
+                               room.status === 'occupied' ? 'Occupied' : 'Maintenance'}
+                            </Badge>
+                            
+                            {room.relation_feature_room?.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {room.relation_feature_room.slice(0, 3).map((rf) => (
+                                  <Badge key={rf.room_features.id} variant="outline" className="text-xs">
+                                    {rf.room_features.symbol && (
+                                      <span className="mr-1">{rf.room_features.symbol}</span>
+                                    )}
+                                    {rf.room_features.title}
+                                  </Badge>
+                                ))}
+                                {room.relation_feature_room.length > 3 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{room.relation_feature_room.length - 3} more
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No rooms available. Add some rooms to get started.
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <Plus className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms available</h3>
+                    <p className="text-gray-500 mb-4">
+                      Start by adding the first room to this homestay.
+                    </p>
+                    <Button onClick={openCreateRoomModal}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Room
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="features">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Room Features</CardTitle>
+                <Button onClick={() => setFeaturesModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Feature
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {roomFeatures.length > 0 ? (
+                  <div className="space-y-6">
+                    {Object.entries(
+                      roomFeatures.reduce((acc, feature) => {
+                        if (!acc[feature.category]) {
+                          acc[feature.category] = [];
+                        }
+                        acc[feature.category].push(feature);
+                        return acc;
+                      }, {} as Record<string, RoomFeature[]>)
+                    ).map(([category, features]) => (
+                      <div key={category} className="space-y-3">
+                        <h3 className="text-lg font-semibold capitalize">
+                          {category.replace('_', ' ')}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {features.map((feature) => (
+                            <Card key={feature.id} className="p-4">
+                              <div className="flex items-center space-x-3">
+                                {feature.symbol && (
+                                  <span className="text-2xl">{feature.symbol}</span>
+                                )}
+                                <div className="flex-1">
+                                  <h4 className="font-medium">{feature.title}</h4>
+                                  {feature.description && (
+                                    <p className="text-sm text-muted-foreground">
+                                      {feature.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <Settings className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No room features available</h3>
+                    <p className="text-gray-500 mb-4">
+                      Start by adding room features that can be assigned to rooms.
+                    </p>
+                    <Button onClick={() => setFeaturesModalOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Feature
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -950,6 +1331,24 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal for creating/editing rooms */}
+      <RoomEditModal
+        room={editingRoom}
+        roomFeatures={roomFeatures}
+        onSave={handleRoomSave}
+        onClose={closeRoomModal}
+        isOpen={roomModalOpen}
+        onAddFeature={() => setFeaturesModalOpen(true)}
+      />
+
+      {/* Modal for managing room features */}
+      <RoomFeaturesModal
+        roomFeatures={roomFeatures}
+        onSave={handleCreateFeature}
+        onClose={() => setFeaturesModalOpen(false)}
+        isOpen={featuresModalOpen}
+      />
     </div>
   );
 } 

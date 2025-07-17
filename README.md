@@ -1,5 +1,5 @@
 <div align="center"><strong>Next.js 15 Admin Dashboard Template</strong></div>
-<div align="center">Built with the Next.js App Router</div>
+<div align="center">Built with the Next.js App Router</div> 
 <br />
 <div align="center">
 <a href="https://next-admin-dash.vercel.app/">Demo</a>

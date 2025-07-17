@@ -510,7 +510,7 @@ export default function BookingsPage() {
                                   className="text-green-600 hover:text-green-700 border-green-600 hover:border-green-700"
                                 >
                                   <DollarSign className="h-4 w-4 mr-2" />
-                                  Marcar como Pagado
+                                  Mark as Paid
                                 </Button>
                               )}
                               
@@ -521,7 +521,7 @@ export default function BookingsPage() {
                                   className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700"
                                 >
                                   <XCircle className="h-4 w-4 mr-2" />
-                                  Marcar como No Pagado
+                                  Mark as Unpaid
                                 </Button>
                               )}
                             </div>
@@ -535,7 +535,7 @@ export default function BookingsPage() {
                           size="sm"
                           onClick={() => handlePaymentStatusChange(booking.id, true)}
                           className="text-green-600 hover:text-green-700 border-green-600 hover:border-green-700"
-                          title="Marcar como pagado"
+                          title="Mark as paid"
                         >
                           <DollarSign className="h-4 w-4" />
                         </Button>
@@ -547,7 +547,7 @@ export default function BookingsPage() {
                           size="sm"
                           onClick={() => handlePaymentStatusChange(booking.id, false)}
                           className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700"
-                          title="Marcar como no pagado"
+                          title="Mark as unpaid"
                         >
                           <XCircle className="h-4 w-4" />
                         </Button>

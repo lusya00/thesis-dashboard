@@ -104,10 +104,10 @@ export function ImageUpload({
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-600 mb-2">
-        Sube imágenes en formato WebP (máximo 2MB cada una). Máximo {maxImages} imágenes.
+        Upload images in WebP format (maximum 2MB each). Maximum {maxImages} images.
       </div>
       
-      {/* Área de drop */}
+      {/* Drop area */}
       <Card 
         className={`border-2 border-dashed transition-colors ${
           dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
@@ -121,19 +121,19 @@ export function ImageUpload({
         <CardContent className="p-8 text-center">
           <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <p className="text-lg font-medium mb-2">
-            Arrastra y suelta imágenes aquí
+            Drag and drop images here
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            o haz clic para seleccionar archivos
+            or click to select files
           </p>
           <Button type="button" variant="outline" disabled={disabled}>
             <ImageIcon className="h-4 w-4 mr-2" />
-            Seleccionar imágenes
+            Select images
           </Button>
         </CardContent>
       </Card>
 
-      {/* Input file oculto */}
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -144,14 +144,14 @@ export function ImageUpload({
         disabled={disabled}
       />
 
-      {/* Vista previa de imágenes */}
+      {/* Image preview */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((image) => (
             <div key={image.id} className="relative group">
               <img
                 src={image.preview}
-                alt="Vista previa"
+                alt="Preview"
                 className="w-full h-32 object-cover rounded-lg border"
               />
               <button
@@ -170,11 +170,11 @@ export function ImageUpload({
         </div>
       )}
 
-      {/* Indicador de carga */}
+      {/* Loading indicator */}
       {uploading && (
         <div className="flex items-center justify-center p-4">
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          <span>Subiendo imágenes...</span>
+          <span>Uploading images...</span>
         </div>
       )}
     </div>

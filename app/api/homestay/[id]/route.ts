@@ -30,6 +30,15 @@ export async function GET(
             { is_primary: 'desc' },
             { order: 'asc' }
           ]
+        },
+        homestayRoom: {
+          include: {
+            relation_feature_room: {
+              include: {
+                room_features: true
+              }
+            }
+          }
         }
       }
     });

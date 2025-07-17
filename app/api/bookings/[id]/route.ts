@@ -8,18 +8,26 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { status } = body;
+    const { status, is_paid } = body;
+
+    const updateData: any = {};
+    
+    if (status !== undefined) {
+      updateData.status = status;
+      if (status === 'cancelled') {
+        updateData.cancelled_at = new Date();
+      }
+    }
+    
+    if (is_paid !== undefined) {
+      updateData.is_paid = is_paid;
+    }
 
     const booking = await prisma.booking.update({
       where: {
         id: parseInt(id)
       },
-      data: {
-        status,
-        ...(status === 'cancelled' && {
-          cancelled_at: new Date()
-        })
-      }
+      data: updateData
     });
 
     return NextResponse.json(booking);

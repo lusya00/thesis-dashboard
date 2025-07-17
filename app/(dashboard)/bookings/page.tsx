@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Eye, CheckCircle, XCircle, Clock, User, ClipboardList, Calendar, CreditCard, FileText, Star, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Eye, CheckCircle, XCircle, Clock, User, ClipboardList, Calendar, CreditCard, FileText, Star, Search, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import { booking_status } from 'generated/prisma';
 import { format } from 'date-fns';
 
@@ -120,6 +120,26 @@ export default function BookingsPage() {
       fetchBookings();
     } catch (error) {
       console.error('Error updating booking status:', error);
+    }
+  };
+
+  const handlePaymentStatusChange = async (bookingId: number, isPaid: boolean) => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_paid: isPaid })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error updating payment status');
+      }
+
+      fetchBookings();
+    } catch (error) {
+      console.error('Error updating payment status:', error);
     }
   };
 
@@ -284,13 +304,14 @@ export default function BookingsPage() {
                       {booking.total_price} {booking.homestayRoom.currency}
                     </TableCell>
                     <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={() => setSelectedBooking(booking)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedBooking(booking)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle className="text-2xl font-bold">Booking Details</DialogTitle>
                           </DialogHeader>
@@ -481,10 +502,57 @@ export default function BookingsPage() {
                                   Mark as Completed
                                 </Button>
                               )}
+                              
+                              {!booking.is_paid && (
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handlePaymentStatusChange(booking.id, true)}
+                                  className="text-green-600 hover:text-green-700 border-green-600 hover:border-green-700"
+                                >
+                                  <DollarSign className="h-4 w-4 mr-2" />
+                                  Marcar como Pagado
+                                </Button>
+                              )}
+                              
+                              {booking.is_paid && (
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handlePaymentStatusChange(booking.id, false)}
+                                  className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Marcar como No Pagado
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </DialogContent>
                       </Dialog>
+                      
+                      {!booking.is_paid && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePaymentStatusChange(booking.id, true)}
+                          className="text-green-600 hover:text-green-700 border-green-600 hover:border-green-700"
+                          title="Marcar como pagado"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {booking.is_paid && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePaymentStatusChange(booking.id, false)}
+                          className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700"
+                          title="Marcar como no pagado"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                     </TableCell>
                   </TableRow>
                 ))}

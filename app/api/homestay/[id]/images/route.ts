@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { deleteHomestayImageServer } from '@/lib/supabase-server';
 
 export async function GET(
   request: NextRequest,
@@ -99,6 +100,33 @@ export async function DELETE(
       );
     }
     
+    // Primero obtener la información de la imagen para eliminar del storage
+    const imageToDelete = await prisma.homestayImages.findUnique({
+      where: {
+        id: imageId,
+        homestay_id: id
+      }
+    });
+    
+    if (!imageToDelete) {
+      return NextResponse.json(
+        { error: 'Image not found' }, 
+        { status: 404 }
+      );
+    }
+    
+    // Eliminar del storage de Supabase primero
+    if (imageToDelete.img_url) {
+      try {
+        await deleteHomestayImageServer(imageToDelete.img_url);
+        console.log('Image deleted from storage:', imageToDelete.img_url);
+      } catch (storageError) {
+        console.error('Error deleting image from storage:', storageError);
+        // Continuar con la eliminación de la base de datos incluso si falla el storage
+      }
+    }
+    
+    // Eliminar de la base de datos
     await prisma.homestayImages.delete({
       where: {
         id: imageId,
@@ -106,9 +134,28 @@ export async function DELETE(
       }
     });
     
+    console.log('Image deleted from database:', imageId);
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting image:', error);
+    
+    // Manejar errores específicos de Prisma
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'P2024') {
+        return NextResponse.json(
+          { error: 'Database connection timeout. Please try again.' }, 
+          { status: 503 }
+        );
+      }
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { error: 'Image not found' }, 
+          { status: 404 }
+        );
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Error deleting image' }, 
       { status: 500 }

@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { uploadHomestayImage, validateWebPFile } from '@/lib/supabase'
+import { uploadHomestayImageServer, validateWebPFileServer } from '@/lib/supabase-server'
 
 export async function POST(request: NextRequest) {
   try {
-
-
     const formData = await request.formData()
     const homestayId = formData.get('homestayId') as string
     const file = formData.get('file') as File
@@ -19,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar el archivo
-    const validation = validateWebPFile(file)
+    const validation = validateWebPFileServer(file)
     if (!validation.valid) {
       return NextResponse.json(
         { error: validation.error },
@@ -39,9 +37,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Subir imagen a Supabase usando el cliente admin
-    const imageUrl = await uploadHomestayImage(file, parseInt(homestayId))
-    console.log(imageUrl)
+    // Subir imagen a Supabase Storage
+    const imageUrl = await uploadHomestayImageServer(file, parseInt(homestayId))
 
     // Si es imagen primaria, actualizar la anterior
     if (isPrimary) {

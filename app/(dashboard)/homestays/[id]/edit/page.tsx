@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { uploadHomestayImage, deleteHomestayImage, validateWebPFile } from '@/lib/supabase';
+import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
 
 interface User {
   id: number;
@@ -470,6 +472,8 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
   const [uploadingImages, setUploadingImages] = useState(false);
   const [roomFeatures, setRoomFeatures] = useState<RoomFeature[]>([]);
   const [selectedTab, setSelectedTab] = useState('general');
+  const [selectedImages, setSelectedImages] = useState<ImageFile[]>([]);
+  const [imageUploadKey, setImageUploadKey] = useState(0);
   
   // Detect if should open directly in rooms tab
   useEffect(() => {
@@ -634,47 +638,45 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleImageUpload = async () => {
+    if (selectedImages.length === 0) return;
 
     setUploadingImages(true);
+    setError('');
+    
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      const imageUploadPromises = selectedImages.map(async (image, index) => {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', image.file);
+        formData.append('homestayId', id);
+        formData.append('isPrimary', index === 0 && !homestay?.homestayImages?.length ? 'true' : 'false');
 
-        // Here you should implement the logic to upload the image to your storage service
-        // For example, using Cloudinary, AWS S3, etc.
-        // const uploadResponse = await fetch('your-upload-endpoint', {
-        //   method: 'POST',
-        //   body: formData
-        // });
-        // const { url } = await uploadResponse.json();
-
-        // For now, we'll use a placeholder URL
-        const url = 'https://via.placeholder.com/300';
-
-        // Save the image in the database
-        await fetch(`/api/homestay/${id}/images`, {
+        const uploadResponse = await fetch('/api/homestay/images', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            img_url: url,
-            is_primary: !homestay?.homestayImages?.length,
-            order: homestay?.homestayImages?.length || 0
-          })
+          body: formData
         });
-      }
 
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.error || 'Error al subir imagen');
+        }
+
+        return uploadResponse.json();
+      });
+
+      await Promise.all(imageUploadPromises);
+      
       // Reload images
       fetchHomestay();
+      
+      // Clear selected images
+      setSelectedImages([]);
+      
+      // Incrementar la key para forzar el reinicio del componente ImageUpload
+      setImageUploadKey(prev => prev + 1);
     } catch (error) {
       console.error('Error uploading images:', error);
-      setError('Error uploading images');
+      setError(error instanceof Error ? error.message : 'Error uploading images');
     } finally {
       setUploadingImages(false);
     }
@@ -682,13 +684,19 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
 
   const handleDeleteImage = async (imageId: number) => {
     try {
-      await fetch(`/api/homestay/${id}/images?imageId=${imageId}`, {
+      const response = await fetch(`/api/homestay/${id}/images?imageId=${imageId}`, {
         method: 'DELETE'
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error deleting image');
+      }
+      
       fetchHomestay();
     } catch (error) {
       console.error('Error deleting image:', error);
-      setError('Error deleting image');
+      setError(error instanceof Error ? error.message : 'Error deleting image');
     }
   };
 
@@ -1038,64 +1046,72 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
                 <CardTitle>Images</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="images">Upload Images</Label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="file"
-                        id="images"
-                        multiple
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('images')?.click()}
-                        disabled={uploadingImages}
-                      >
-                        {uploadingImages ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload Images
-                          </>
-                        )}
-                      </Button>
+                <div className="space-y-6">
+                  {/* Componente de carga de imágenes */}
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600">
+                      Upload images to showcase your homestay. The first image will be set as the primary image.
                     </div>
+                    <ImageUpload
+                      key={imageUploadKey}
+                      onImagesChange={setSelectedImages}
+                      maxImages={5}
+                      disabled={uploadingImages}
+                    />
+                    {selectedImages.length > 0 && (
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-500">
+                          {selectedImages.length} image(s) selected
+                        </div>
+                        <Button
+                          onClick={handleImageUpload}
+                          disabled={uploadingImages}
+                        >
+                          {uploadingImages ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Images
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Imágenes existentes */}
                   {homestay?.homestayImages?.length ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {homestay.homestayImages.map((image) => (
-                        <div key={image.id} className="relative group">
-                          <img
-                            src={image.img_url}
-                            alt="Homestay"
-                            className="w-full h-48 object-cover rounded-lg"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => handleDeleteImage(image.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          {image.is_primary && (
-                            <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded text-xs">
-                              Primary
+                                          <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Existing Images</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {homestay.homestayImages.map((image) => (
+                          <div key={image.id} className="relative group">
+                            <img
+                              src={image.img_url}
+                              alt="Homestay"
+                              className="w-full h-48 object-cover rounded-lg"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => handleDeleteImage(image.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            {image.is_primary && (
+                              <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded text-xs">
+                                Primary
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">

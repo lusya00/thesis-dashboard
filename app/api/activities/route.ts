@@ -1,62 +1,79 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Configuración de CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // Permite todos los orígenes - puedes cambiarlo a dominios específicos
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Max-Age': '86400', // 24 horas
+};
+
 // CORS preflight handler
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': 'https://untung-jawa.vercel.app',
-      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
+    headers: corsHeaders,
   });
 }
 
 export async function GET(request: NextRequest) {
-    const activities = await prisma.activities.findMany({
-        include: {
-            admin_users: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
+    try {
+        const activities = await prisma.activities.findMany({
+            include: {
+                admin_users: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
+                homestay: {
+                    select: {
+                        id: true,
+                        title: true,
+                        location: true,
+                    }
+                },
+                activity_images: {
+                    orderBy: [
+                        { is_primary: 'desc' },
+                        { order: 'asc' }
+                    ]
+                },
+                activity_bookings: {
+                    select: {
+                        id: true,
+                        status: true,
+                        participant_count: true,
+                    }
                 }
             },
-            homestay: {
-                select: {
-                    id: true,
-                    title: true,
-                    location: true,
-                }
-            },
-            activity_images: {
-                orderBy: [
-                    { is_primary: 'desc' },
-                    { order: 'asc' }
-                ]
-            },
-            activity_bookings: {
-                select: {
-                    id: true,
-                    status: true,
-                    participant_count: true,
+            orderBy: {
+                created_at: 'desc'
+            }
+        });
+        
+        return new NextResponse(JSON.stringify(activities), {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        });
+    } catch (error) {
+        console.error('Error fetching activities:', error);
+        return new NextResponse(
+            JSON.stringify({ error: 'Internal server error' }), 
+            { 
+                status: 500,
+                headers: {
+                    ...corsHeaders,
+                    'Content-Type': 'application/json',
                 }
             }
-        },
-        orderBy: {
-            created_at: 'desc'
-        }
-    });
-    return new NextResponse(JSON.stringify(activities), {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': 'https://untung-jawa.vercel.app',
-        'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Content-Type': 'application/json',
-      },
-    });
+        );
+    }
 }
 
 export async function POST(request: NextRequest) {
@@ -91,9 +108,15 @@ export async function POST(request: NextRequest) {
         
         // Validar campos requeridos
         if (!title || !category || !price || !max_participants || !location) {
-            return NextResponse.json(
-                { error: 'Missing required fields: title, category, price, max_participants, location' },
-                { status: 400 }
+            return new NextResponse(
+                JSON.stringify({ error: 'Missing required fields: title, category, price, max_participants, location' }),
+                { 
+                    status: 400,
+                    headers: {
+                        ...corsHeaders,
+                        'Content-Type': 'application/json',
+                    }
+                }
             );
         }
         
@@ -142,12 +165,27 @@ export async function POST(request: NextRequest) {
             }
         });
         
-        return NextResponse.json(activity, { status: 201 });
+        return new NextResponse(
+            JSON.stringify(activity), 
+            { 
+                status: 201,
+                headers: {
+                    ...corsHeaders,
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
     } catch (error) {
         console.error('Error creating activity:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
+        return new NextResponse(
+            JSON.stringify({ error: 'Internal server error' }), 
+            { 
+                status: 500,
+                headers: {
+                    ...corsHeaders,
+                    'Content-Type': 'application/json',
+                }
+            }
         );
     }
 } 

@@ -348,7 +348,7 @@ export function HomestaysTable({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => router.push(`/homestays/${homestay.id}/edit`)}
+                            onClick={() => router.push(`/dashboard/homestays/${homestay.id}/edit`)}
                             title="Edit homestay"
                           >
                             <Pencil className="h-4 w-4" />
@@ -356,7 +356,7 @@ export function HomestaysTable({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => router.push(`/homestays/${homestay.id}/edit?tab=rooms`)}
+                            onClick={() => router.push(`/dashboard/homestays/${homestay.id}/edit?tab=rooms`)}
                             title="Manage rooms"
                           >
                             <Bed className="h-4 w-4" />

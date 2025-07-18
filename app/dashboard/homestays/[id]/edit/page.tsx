@@ -628,7 +628,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
         throw new Error(errorData.error || 'Error updating homestay');
       }
       
-      router.push('/homestays');
+      router.push('/dashboard/homestays');
       router.refresh();
     } catch (error) {
       console.error('Error:', error);
@@ -1024,7 +1024,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push('/homestays')}
+                  onClick={() => router.push('/dashboard/homestays')}
                 >
                   Cancel
                 </Button>

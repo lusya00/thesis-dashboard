@@ -98,7 +98,7 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button onClick={() => router.push(`/users/edit/${user.id}`)}>
+        <Button onClick={() => router.push(`/dashboard/users/edit/${user.id}`)}>
           <Edit className="mr-2 h-4 w-4" />
           Edit User
         </Button>

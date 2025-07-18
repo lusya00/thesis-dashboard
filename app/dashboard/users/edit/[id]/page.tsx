@@ -85,7 +85,7 @@ export default function EditUserPage() {
       }
 
       toast.success('User updated successfully');
-      router.push('/users');
+      router.push('/dashboard/users');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error updating user');

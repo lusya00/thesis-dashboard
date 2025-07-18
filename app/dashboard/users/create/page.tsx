@@ -88,7 +88,7 @@ export default function CreateUserPage() {
       
       // Redirect after a while
       setTimeout(() => {
-        router.push("/users");
+        router.push("/dashboard/users");
       }, 2000);
     } catch (err: any) {
       setError(err.message || "Error creating user. Please try again.");
@@ -257,7 +257,7 @@ export default function CreateUserPage() {
               <Button 
                 variant="outline" 
                 type="button"
-                onClick={() => router.push("/users")}
+                onClick={() => router.push("/dashboard/users")}
                 disabled={loading}
               >
                 Cancel

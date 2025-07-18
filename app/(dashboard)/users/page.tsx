@@ -318,11 +318,11 @@ export default function UsersPage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => router.push(`/users/${user.id}`)}>
+                                                        <DropdownMenuItem onClick={() => router.push(`/dashboard/users/${user.id}`)}>
                                                             <Eye className="mr-2 h-4 w-4" />
                                                             View details
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => router.push(`/users/edit/${user.id}`)}>
+                                                        <DropdownMenuItem onClick={() => router.push(`/dashboard/users/edit/${user.id}`)}>
                                                             <Edit className="mr-2 h-4 w-4" />
                                                             Edit
                                                         </DropdownMenuItem>

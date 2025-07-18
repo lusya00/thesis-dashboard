@@ -140,7 +140,7 @@ export function HomestaysTable({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/homestays/${homestay.id}/edit`)}
+                      onClick={() => router.push(`/dashboard /homestays/${homestay.id}/edit`)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>

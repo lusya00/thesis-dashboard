@@ -1,10 +1,10 @@
 import { Analytics } from '@vercel/analytics/react';
-import Providers from './providers';
-import { User } from './user';
-import { SearchInput } from './search';
-import { BreadcrumbNav } from './breadcrumb-nav';
-import { DesktopNav } from './desktop-nav';
-import { MobileNav } from './mobile-nav';
+import { BreadcrumbNav } from 'app/dashboard/breadcrumb-nav';
+import { DesktopNav } from 'app/dashboard/desktop-nav';
+import { MobileNav } from 'app/dashboard/mobile-nav';
+import Providers from 'app/dashboard/providers';
+import { SearchInput } from 'app/dashboard/search';
+import { User } from 'app/dashboard/user';
 
 export default function DashboardLayout({
   children

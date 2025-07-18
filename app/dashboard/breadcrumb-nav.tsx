@@ -22,15 +22,19 @@ export function BreadcrumbNav() {
   
   // Always add dashboard as the first item
   breadcrumbItems.push({
-    href: '/',
+    href: '/dashboard',
     label: 'Dashboard',
-    isActive: pathname === '/'
+    isActive: pathname === '/dashboard'
   });
   
-  // Add other segments
-  let currentPath = '';
+  // Add other segments (skip 'dashboard' if it's the first segment)
+  let currentPath = '/dashboard';
   
   segments.forEach((segment, index) => {
+    if (segment === 'dashboard' && index === 0) {
+      return; // Skip the dashboard segment since we already added it
+    }
+    
     currentPath += `/${segment}`;
     
     // Format the segment name properly

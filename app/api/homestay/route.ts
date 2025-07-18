@@ -1,32 +1,67 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
-    const homestays = await prisma.homestay.findMany({
-        include: {
-            admin_users: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
+    try {
+        // Get current user session
+        const session = await auth();
+        
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { user } = session;
+        
+        // Build where clause based on user role
+        let whereClause: any = {};
+        
+        // If user is homestay_owner, only show their homestays
+        if (user.role === 'homestay_owner') {
+            whereClause.user_id = parseInt(user.id);
+        }
+        // super_admin and activity_manager can see all homestays
+
+        const homestays = await prisma.homestay.findMany({
+            where: whereClause,
+            include: {
+                admin_users: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
+                homestayImages: {
+                    orderBy: [
+                        { is_primary: 'desc' },
+                        { order: 'asc' }
+                    ]
                 }
             },
-            homestayImages: {
-                orderBy: [
-                    { is_primary: 'desc' },
-                    { order: 'asc' }
-                ]
+            orderBy: {
+                created_at: 'desc'
             }
-        },
-        orderBy: {
-            created_at: 'desc'
-        }
-    });
-    return NextResponse.json(homestays);
+        });
+        
+        return NextResponse.json(homestays);
+    } catch (error) {
+        console.error('Error fetching homestays:', error);
+        return NextResponse.json(
+            { error: 'Error fetching homestays' },
+            { status: 500 }
+        );
+    }
 }
 
 export async function POST(request: NextRequest) {
     try {
+        const session = await auth();
+        
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         
         const { 
@@ -42,19 +77,28 @@ export async function POST(request: NextRequest) {
             contact_number 
         } = body;
         
-        // Validar campos requeridos
-        if (!title || !user_id || !location || !address) {
+        // Validate required fields
+        if (!title || !location || !address) {
             return NextResponse.json(
-                { error: 'Faltan campos requeridos' },
+                { error: 'Missing required fields' },
                 { status: 400 }
             );
         }
+
+        // Determine user_id based on role
+        let finalUserId = user_id;
+        
+        // If user is homestay_owner, they can only create homestays for themselves
+        if (session.user.role === 'homestay_owner') {
+            finalUserId = parseInt(session.user.id);
+        }
+        // super_admin and activity_manager can create homestays for any user
         
         const newHomestay = await prisma.homestay.create({
             data: {
                 title,
                 description,
-                user_id,
+                user_id: finalUserId,
                 status: status || 'active',
                 has_rooms: has_rooms || false,
                 location,
@@ -67,9 +111,9 @@ export async function POST(request: NextRequest) {
         
         return NextResponse.json(newHomestay, { status: 201 });
     } catch (error) {
-        console.error('Error al crear homestay:', error);
+        console.error('Error creating homestay:', error);
         return NextResponse.json(
-            { error: 'Error al crear homestay' },
+            { error: 'Error creating homestay' },
             { status: 500 }
         );
     }

@@ -71,6 +71,24 @@
     @apply border-border;
     transition: background 0.3s cubic-bezier(0.4,0,0.2,1), color 0.3s cubic-bezier(0.4,0,0.2,1), border-color 0.3s cubic-bezier(0.4,0,0.2,1);
   }
+  
+  /* Animated gradient for login page */
+  .animate-gradient-xy {
+    background-size: 400% 400%;
+    animation: gradient-xy 15s ease infinite;
+  }
+  
+  @keyframes gradient-xy {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
   body {
     @apply bg-background text-foreground;
     background: linear-gradient(to right, #a5f3fc, #93c5fd); /* from-cyan-200 to-blue-300 */

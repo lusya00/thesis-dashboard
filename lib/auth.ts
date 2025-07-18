@@ -1,8 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from './db';
-import { user_role } from '../generated/prisma';
-import { verifyPassword } from './password';
+import { hashPassword, verifyPassword } from './password';
 
 interface Credentials {
   email: string;
@@ -19,28 +18,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials || !credentials.email || !credentials.password) {
+          console.log('Missing credentials');
           return null;
         }
 
         try {
+          console.log('Attempting to authenticate user:', credentials.email);
+          
           const user = await prisma.admin_users.findUnique({
             where: { email: credentials.email as string }
           });
 
-          if (!user || !user.is_active) {
+          if (!user) {
+            console.log('User not found:', credentials.email);
             return null;
           }
 
+          if (!user.is_active) {
+            console.log('User is inactive:', credentials.email);
+            return null;
+          }
+
+          console.log('User found, verifying password...');
+          
           const passwordMatch = await verifyPassword(
             credentials.password as string,
             user.password
           );
 
           if (!passwordMatch) {
+            console.log('Password mismatch for user:', credentials.email);
             return null;
           }
 
-          // Actualizar último inicio de sesión
+          console.log('Password verified successfully for user:', credentials.email);
+
+          // Update last login
           await prisma.admin_users.update({
             where: { id: user.id },
             data: { last_login: new Date() }
@@ -53,7 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             role: user.role
           };
         } catch (error) {
-          console.error('Error en autenticación:', error);
+          console.error('Authentication error:', error);
           return null;
         }
       }
@@ -82,5 +95,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: 'jwt'
   },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development'
 });

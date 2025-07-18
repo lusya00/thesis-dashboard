@@ -19,13 +19,13 @@ export function SearchInput() {
   }
 
   return (
-    <form action={searchAction} className="relative ml-auto flex-1 md:grow-0">
-      <Search className="absolute left-2.5 top-[.75rem] h-4 w-4 text-muted-foreground" />
+    <form action={searchAction} className="relative">
+      <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         name="q"
         type="search"
         placeholder="Search..."
-        className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+        className="w-full rounded-lg bg-background pl-8 min-w-[200px] max-w-[300px] lg:w-[336px]"
       />
       {isPending && <Spinner />}
     </form>

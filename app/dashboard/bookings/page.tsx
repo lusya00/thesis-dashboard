@@ -82,6 +82,7 @@ export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<booking_status | 'all'>('all');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [userRole, setUserRole] = useState<string>('');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,6 +90,15 @@ export default function BookingsPage() {
 
   useEffect(() => {
     fetchBookings();
+    // Get user role from session
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUserRole(data.user.role);
+        }
+      })
+      .catch(err => console.error('Error fetching user role:', err));
   }, []);
 
   const fetchBookings = async () => {
@@ -211,7 +221,9 @@ export default function BookingsPage() {
   return (
     <div className="container mx-auto py-10">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Bookings</h1>
+        <h1 className="text-2xl font-bold mb-6">
+        {userRole === 'homestay_owner' ? 'My Homestay Bookings' : 'Bookings'}
+      </h1>
 
         <Card className="mb-6">
           <CardContent className="pt-6">

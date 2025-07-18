@@ -59,6 +59,7 @@ export function HomestaysTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [userRole, setUserRole] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const getStatus = (status: string) => {
@@ -164,18 +165,37 @@ export function HomestaysTable({
 
   useEffect(() => {
     fetchHomestays();
+    // Get user role from session
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUserRole(data.user.role);
+        }
+      })
+      .catch(err => console.error('Error fetching user role:', err));
   }, []);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Homestays</CardTitle>
+          <CardTitle>
+            {userRole === 'homestay_owner' ? 'My Homestays' : 'Homestays'}
+          </CardTitle>
           <CardDescription>
-            Manage your homestays and view their information.
+            {userRole === 'homestay_owner' 
+              ? 'Manage your homestays and view their information.'
+              : 'Manage all homestays and view their information.'
+            }
           </CardDescription>
         </div>
-        <CreateHomestayModal onSuccess={fetchHomestays} />
+        {userRole !== 'homestay_owner' && (
+          <CreateHomestayModal onSuccess={fetchHomestays} />
+        )}
+        {userRole === 'homestay_owner' && (
+          <CreateHomestayModal onSuccess={fetchHomestays} />
+        )}
       </CardHeader>
       
       {/* Filtros */}

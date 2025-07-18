@@ -28,7 +28,7 @@ export default function ErrorPage() {
             <Shield className="w-8 h-8 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Untung Jawa Admin</h1>
-          <p className="text-gray-600 text-sm">Dashboard de Administración</p>
+          <p className="text-gray-600 text-sm">Administration Dashboard</p>
         </div>
 
         {/* Error Card */}
@@ -38,23 +38,23 @@ export default function ErrorPage() {
               <AlertTriangle className="w-10 h-10 text-red-500" />
             </div>
             <CardTitle className="text-3xl font-bold text-gray-900 mb-3">
-              Error Inesperado
+              Unexpected Error
             </CardTitle>
             <CardDescription className="text-gray-600 text-lg">
-              Lo sentimos, algo salió mal
+              Sorry, something went wrong
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-8 px-8 pb-8">
             <div className="text-center">
               <p className="text-gray-600 leading-relaxed">
-                Ha ocurrido un error inesperado en el sistema. Nuestro equipo técnico ha sido notificado y está trabajando para solucionarlo.
+                An unexpected error has occurred in the system. Our technical team has been notified and is working to resolve it.
               </p>
             </div>
 
             {/* Error Code (simulated) */}
             <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-500 mb-1">Código de Error</p>
+              <p className="text-sm text-gray-500 mb-1">Error Code</p>
               <p className="font-mono text-lg font-semibold text-gray-700">ERR_500</p>
             </div>
 
@@ -66,7 +66,7 @@ export default function ErrorPage() {
                 size="lg"
               >
                 <Home className="w-5 h-5 mr-3" />
-                Ir al Dashboard
+                Go to Dashboard
               </Button>
               
               <div className="flex gap-3">
@@ -76,7 +76,7 @@ export default function ErrorPage() {
                   className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-3 rounded-xl transition-all duration-200"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Volver
+                  Go Back
                 </Button>
                 
                 <Button 
@@ -85,7 +85,7 @@ export default function ErrorPage() {
                   className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-3 rounded-xl transition-all duration-200"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Reintentar
+                  Retry
                 </Button>
               </div>
             </div>
@@ -93,10 +93,10 @@ export default function ErrorPage() {
             {/* Support Information */}
             <div className="text-center pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-500 mb-2">
-                ¿Necesitas ayuda?
+                Need help?
               </p>
               <div className="flex justify-center space-x-4 text-xs text-gray-400">
-                <span>📧 soporte@untungjawa.com</span>
+                <span>📧 support@untungjawa.com</span>
                 <span>📞 +62 123 456 789</span>
               </div>
             </div>
@@ -106,10 +106,10 @@ export default function ErrorPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-gray-500 text-sm">
-            © 2024 Untung Jawa. Todos los derechos reservados.
+            © 2024 Untung Jawa. All rights reserved.
           </p>
           <p className="text-gray-400 text-xs mt-1">
-            Versión 1.0.0 • Desarrollado con Next.js
+            Version 1.0.0 • Built with Next.js
           </p>
         </div>
       </div>

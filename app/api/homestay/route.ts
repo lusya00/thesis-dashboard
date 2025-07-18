@@ -12,6 +12,14 @@ export async function GET(request: NextRequest) {
         }
 
         const { user } = session;
+        const { searchParams } = new URL(request.url);
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const search = searchParams.get('search') || '';
+        const status = searchParams.get('status') || '';
+        const owner = searchParams.get('owner') || '';
+
+        const skip = (page - 1) * limit;
         
         // Build where clause based on user role
         let whereClause: any = {};
@@ -22,29 +30,61 @@ export async function GET(request: NextRequest) {
         }
         // super_admin and activity_manager can see all homestays
 
-        const homestays = await prisma.homestay.findMany({
-            where: whereClause,
-            include: {
-                admin_users: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
+        // Add search filter
+        if (search) {
+            whereClause.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { location: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
+        // Add status filter
+        if (status && status !== 'all') {
+            whereClause.status = status;
+        }
+
+        // Add owner filter
+        if (owner && owner !== 'all') {
+            whereClause.user_id = parseInt(owner);
+        }
+
+        // Get homestays with pagination
+        const [homestays, total] = await Promise.all([
+            prisma.homestay.findMany({
+                where: whereClause,
+                include: {
+                    admin_users: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                        }
+                    },
+                    homestayImages: {
+                        orderBy: [
+                            { is_primary: 'desc' },
+                            { order: 'asc' }
+                        ]
                     }
                 },
-                homestayImages: {
-                    orderBy: [
-                        { is_primary: 'desc' },
-                        { order: 'asc' }
-                    ]
-                }
-            },
-            orderBy: {
-                created_at: 'desc'
+                orderBy: {
+                    created_at: 'desc'
+                },
+                skip,
+                take: limit
+            }),
+            prisma.homestay.count({ where: whereClause })
+        ]);
+        
+        return NextResponse.json({
+            homestays,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit)
             }
         });
-        
-        return NextResponse.json(homestays);
     } catch (error) {
         console.error('Error fetching homestays:', error);
         return NextResponse.json(

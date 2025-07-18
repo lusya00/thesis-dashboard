@@ -496,13 +496,13 @@ export default function BookingsPage() {
                                     onClick={() => handleStatusChange(booking.id, 'cancelled')}
                                     className="text-red-600 hover:text-red-700"
                                   >
-                                    Cancel
+                                    Cancel Booking
                                   </Button>
                                   <Button
                                     onClick={() => handleStatusChange(booking.id, 'confirmed')}
                                     className="bg-green-600 hover:bg-green-700"
                                   >
-                                    Confirm
+                                    Confirm Booking
                                   </Button>
                                 </>
                               )}
@@ -511,7 +511,7 @@ export default function BookingsPage() {
                                   onClick={() => handleStatusChange(booking.id, 'completed')}
                                   className="bg-blue-600 hover:bg-blue-700"
                                 >
-                                  Mark as Completed
+                                  Mark as Completed Booking
                                 </Button>
                               )}
                               
@@ -522,7 +522,7 @@ export default function BookingsPage() {
                                   className="text-green-600 hover:text-green-700 border-green-600 hover:border-green-700"
                                 >
                                   <DollarSign className="h-4 w-4 mr-2" />
-                                  Mark as Paid
+                                  Mark as Paid Booking
                                 </Button>
                               )}
                               
@@ -533,7 +533,7 @@ export default function BookingsPage() {
                                   className="text-red-600 hover:text-red-700 border-red-600 hover:border-red-700"
                                 >
                                   <XCircle className="h-4 w-4 mr-2" />
-                                  Mark as Unpaid
+                                  Mark as Unpaid Booking 
                                 </Button>
                               )}
                             </div>

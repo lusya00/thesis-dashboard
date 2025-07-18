@@ -14,7 +14,7 @@ async function createSuperAdmin() {
 
     if (existingAdmin) {
       console.log('Super admin already exists!');
-      console.log('Email: admin@untungjawa.com');
+      console.log('Email:   ');
       console.log('Password: admin123');
       return;
     }

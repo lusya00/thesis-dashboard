@@ -1,6 +1,17 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': 'https://untung-jawa.vercel.app',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const id = (await params).id;
     const parsedId = parseInt(id);
@@ -55,7 +66,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
     
-    return NextResponse.json(activity);
+    return new NextResponse(JSON.stringify(activity), {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': 'https://untung-jawa.vercel.app',
+            'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

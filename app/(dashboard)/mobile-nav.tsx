@@ -63,9 +63,9 @@ export function MobileNav() {
           {/* Navigation */}
           <nav className="flex-1 px-2 py-4 space-y-1">
             <Link
-              href="/"
+              href="/dashboard"
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/') 
+                isActive('/dashboard') 
                   ? 'bg-primary text-primary-foreground' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -75,9 +75,9 @@ export function MobileNav() {
             </Link>
 
             <Link
-              href="/bookings"
+              href="/dashboard/bookings"
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/bookings') 
+                isActive('/dashboard/bookings') 
                   ? 'bg-primary text-primary-foreground' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -87,9 +87,9 @@ export function MobileNav() {
             </Link>
 
             <Link
-              href="/homestays"
+              href="/dashboard/homestays"
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/homestays') 
+                isActive('/dashboard/homestays') 
                   ? 'bg-primary text-primary-foreground' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
@@ -101,9 +101,9 @@ export function MobileNav() {
             {/* Show Activities only for super_admin and activity_manager */}
             {(userRole === 'super_admin' || userRole === 'activity_manager') && (
               <Link
-                href="/activities"
+                href="/dashboard/activities"
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/activities') 
+                  isActive('/dashboard/activities') 
                     ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
@@ -116,9 +116,9 @@ export function MobileNav() {
             {/* Show Users only for super_admin */}
             {userRole === 'super_admin' && (
               <Link
-                href="/users"
+                href="/dashboard/users"
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/users') 
+                  isActive('/dashboard/users') 
                     ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
@@ -131,9 +131,9 @@ export function MobileNav() {
             {/* Show Analytics only for super_admin */}
             {userRole === 'super_admin' && (
               <Link
-                href="#"
+                href="/dashboard/analytics"
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/analytics') 
+                  isActive('/dashboard/analytics') 
                     ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }`}
@@ -143,17 +143,6 @@ export function MobileNav() {
               </Link>
             )}
           </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t">
-            <Link
-              href="#"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              <LineChart className="h-5 w-5" />
-              Settings
-            </Link>
-          </div>
         </div>
       </SheetContent>
     </Sheet>

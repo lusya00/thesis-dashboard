@@ -108,7 +108,7 @@ export function CreateActivityModal({ onSuccess }: CreateActivityModalProps) {
     try {
       const response = await fetch('/api/users');
       const data = await response.json();
-      setUsers(data);
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error loading users:', error);
     }

@@ -244,7 +244,7 @@ export default function UsersPage() {
                         <CardTitle>Users</CardTitle>
                         <CardDescription>Manage all users.</CardDescription>
                     </div>
-                    <Link href="/users/create">
+                    <Link href="/dashboard/users/create">
                         <Button>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Create User

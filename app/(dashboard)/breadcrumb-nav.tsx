@@ -22,9 +22,9 @@ export function BreadcrumbNav() {
   
   // Always add dashboard as the first item
   breadcrumbItems.push({
-    href: '/',
+    href: '/dashboard',
     label: 'Dashboard',
-    isActive: pathname === '/'
+    isActive: pathname === '/dashboard'
   });
   
   // Add other segments

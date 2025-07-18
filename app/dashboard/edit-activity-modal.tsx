@@ -162,8 +162,8 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
     try {
       const response = await fetch('/api/users');
       const data = await response.json();
-      setUsers(data);
-      setFilteredUsers(data);
+      setUsers(data.users || []);
+      setFilteredUsers(data.users || []);
     } catch (error) {
       console.error('Error loading users:', error);
     }

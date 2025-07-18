@@ -19,12 +19,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Loader2, Pencil, Bed, Search, Filter, X, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Pencil, Bed, Search, Filter, X, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, useCallback } from 'react';
 import { homestay } from 'generated/prisma';
 import { CreateHomestayModal } from '../create-homestay-modal';
 import { EditHomestayModal } from '../edit-homestay-modal';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import Image from 'next/image';
 
 interface Homestay extends homestay {
@@ -64,6 +73,11 @@ export function HomestaysTable() {
     total: 0,
     pages: 0
   });
+
+  // Estados para eliminación
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [homestayToDelete, setHomestayToDelete] = useState<Homestay | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getStatus = (status: string) => {
     if (status === 'active') return 'Active';
@@ -157,6 +171,40 @@ export function HomestaysTable() {
     await fetchHomestays(pagination.page, searchTerm, statusFilter, ownerFilter);
   }, [fetchHomestays, pagination.page, searchTerm, statusFilter, ownerFilter]);
 
+  // Function to handle delete
+  const handleDeleteClick = (homestay: Homestay) => {
+    setHomestayToDelete(homestay);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!homestayToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/homestay/${homestayToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error deleting homestay');
+      }
+
+      toast.success('Homestay deleted successfully');
+      setDeleteModalOpen(false);
+      setHomestayToDelete(null);
+      
+      // Reload data
+      await reloadData();
+    } catch (error) {
+      console.error('Error deleting homestay:', error);
+      toast.error(error instanceof Error ? error.message : 'Error deleting homestay');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
@@ -204,275 +252,339 @@ export function HomestaysTable() {
   }, []);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>
-            {userRole === 'homestay_owner' ? 'My Homestays' : 'Homestays'}
-          </CardTitle>
-          <CardDescription>
-            {userRole === 'homestay_owner' 
-              ? 'Manage your homestays and view their information.'
-              : 'Manage all homestays and view their information.'
-            }
-          </CardDescription>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => reloadData()}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          {userRole !== 'homestay_owner' && (
-            <CreateHomestayModal onSuccess={reloadData} />
-          )}
-          {userRole === 'homestay_owner' && (
-            <CreateHomestayModal onSuccess={reloadData} />
-          )}
-        </div>
-      </CardHeader>
-      
-      {/* Filtros */}
-      <div className="px-6 pb-4 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Búsqueda */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by title or location..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10"
-            />
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>
+              {userRole === 'homestay_owner' ? 'My Homestays' : 'Homestays'}
+            </CardTitle>
+            <CardDescription>
+              {userRole === 'homestay_owner' 
+                ? 'Manage your homestays and view their information.'
+                : 'Manage all homestays and view their information.'
+              }
+            </CardDescription>
           </div>
-          
-          {/* Filtro por estado */}
-          <Select value={statusFilter} onValueChange={handleStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="deleted">Deleted</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {/* Filtro por propietario - solo para super_admin y activity_manager */}
-          {userRole !== 'homestay_owner' && (
-            <Select value={ownerFilter} onValueChange={handleOwnerFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filter by owner" />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => reloadData()}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            {userRole !== 'homestay_owner' && (
+              <CreateHomestayModal onSuccess={reloadData} />
+            )}
+            {userRole === 'homestay_owner' && (
+              <CreateHomestayModal onSuccess={reloadData} />
+            )}
+          </div>
+        </CardHeader>
+        
+        {/* Filtros */}
+        <div className="px-6 pb-4 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Búsqueda */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by title or location..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Filtro por estado */}
+            <Select value={statusFilter} onValueChange={handleStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Owners</SelectItem>
-                {/* Los propietarios se cargarán dinámicamente si es necesario */}
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="deleted">Deleted</SelectItem>
               </SelectContent>
             </Select>
-          )}
+            
+            {/* Filtro por propietario - solo para super_admin y activity_manager */}
+            {userRole !== 'homestay_owner' && (
+              <Select value={ownerFilter} onValueChange={handleOwnerFilter}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Filter by owner" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Owners</SelectItem>
+                  {/* Los propietarios se cargarán dinámicamente si es necesario */}
+                </SelectContent>
+              </Select>
+            )}
 
-          {/* Selector de elementos por página */}
-          <Select value={pagination.limit.toString()} onValueChange={(value) => handleLimitChange(parseInt(value))}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5 per page</SelectItem>
-              <SelectItem value="10">10 per page</SelectItem>
-              <SelectItem value="20">20 per page</SelectItem>
-              <SelectItem value="50">50 per page</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Mostrar filtros activos */}
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Filter className="h-4 w-4" />
-              <span>Active filters:</span>
-              {searchTerm && (
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  Search: "{searchTerm}"
-                </span>
-              )}
-              {statusFilter !== 'all' && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                  Status: {getStatus(statusFilter)}
-                </span>
-              )}
-              {ownerFilter !== 'all' && (
-                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                  Owner: {ownerFilter}
-                </span>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Clear filters
-            </Button>
+            {/* Selector de elementos por página */}
+            <Select value={pagination.limit.toString()} onValueChange={(value) => handleLimitChange(parseInt(value))}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 per page</SelectItem>
+                <SelectItem value="10">10 per page</SelectItem>
+                <SelectItem value="20">20 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
-
-        {/* Results information */}
-        <div className="flex justify-between items-center text-sm text-muted-foreground">
-          <span>
-            Showing {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} homestays
-          </span>
-          {searchTerm && (
-            <span>Results for: "{searchTerm}"</span>
-          )}
-        </div>
-      </div>
-      
-      <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            <p>Loading...</p>
-          </div>
-        ) : (
-          <>
-            {homestays.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <Search className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {hasActiveFilters ? 'No homestays found' : 'No homestays available'}
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  {hasActiveFilters 
-                    ? 'Try adjusting your search criteria or filters.'
-                    : 'Start by creating your first homestay.'
-                  }
-                </p>
-                {hasActiveFilters && (
-                  <Button onClick={clearFilters} variant="outline">
-                    Clear all filters
-                  </Button>
+          
+          {/* Mostrar filtros activos */}
+          {hasActiveFilters && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Filter className="h-4 w-4" />
+                <span>Active filters:</span>
+                {searchTerm && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    Search: "{searchTerm}"
+                  </span>
+                )}
+                {statusFilter !== 'all' && (
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Status: {getStatus(statusFilter)}
+                  </span>
+                )}
+                {ownerFilter !== 'all' && (
+                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                    Owner: {ownerFilter}
+                  </span>
                 )}
               </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden md:table-cell">Price</TableHead>
-                    <TableHead className="hidden md:table-cell">Guests</TableHead>
-                    <TableHead className="hidden md:table-cell">Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {homestays.map((homestay) => (
-                    <TableRow key={homestay.id}>
-                      <TableCell>{homestay.id}</TableCell>
-                      <TableCell className="font-medium">{homestay.title}</TableCell>
-                      <TableCell>{homestay.location}</TableCell>
-                      <TableCell>{homestay.admin_users?.name}</TableCell>
-                      <TableCell>{homestay.admin_users?.email}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getColorStatus(homestay.status)} text-white`}>
-                          {getStatus(homestay.status)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {homestay.base_price ? `IDR ${homestay.base_price}` : '-'}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {homestay.max_guests || '-'}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {new Date(homestay.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push(`/dashboard/homestays/${homestay.id}/edit`)}
-                            title="Edit homestay"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => router.push(`/dashboard/homestays/${homestay.id}/edit?tab=rooms`)}
-                            title="Manage rooms"
-                          >
-                            <Bed className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </>
-        )}
-      </CardContent>
-      
-      {/* Paginación */}
-      {pagination.pages > 1 && (
-        <CardFooter>
-          <div className="flex items-center w-full justify-between">
-            <div className="text-sm text-muted-foreground">
-              Page {pagination.page} of {pagination.pages}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Clear filters
+              </Button>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(pagination.page - 1)}
-                disabled={pagination.page <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              
-              {getPageNumbers().map((pageNum) => (
+          )}
+
+          {/* Results information */}
+          <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <span>
+              Showing {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} homestays
+            </span>
+            {searchTerm && (
+              <span>Results for: "{searchTerm}"</span>
+            )}
+          </div>
+        </div>
+        
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <p>Loading...</p>
+            </div>
+          ) : (
+            <>
+              {homestays.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Search className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {hasActiveFilters ? 'No homestays found' : 'No homestays available'}
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {hasActiveFilters 
+                      ? 'Try adjusting your search criteria or filters.'
+                      : 'Start by creating your first homestay.'
+                    }
+                  </p>
+                  {hasActiveFilters && (
+                    <Button onClick={clearFilters} variant="outline">
+                      Clear all filters
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden md:table-cell">Price</TableHead>
+                      <TableHead className="hidden md:table-cell">Guests</TableHead>
+                      <TableHead className="hidden md:table-cell">Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {homestays.map((homestay) => (
+                      <TableRow key={homestay.id}>
+                        <TableCell>{homestay.id}</TableCell>
+                        <TableCell className="font-medium">{homestay.title}</TableCell>
+                        <TableCell>{homestay.location}</TableCell>
+                        <TableCell>{homestay.admin_users?.name}</TableCell>
+                        <TableCell>{homestay.admin_users?.email}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getColorStatus(homestay.status)} text-white`}>
+                            {getStatus(homestay.status)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {homestay.base_price ? `IDR ${homestay.base_price}` : '-'}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {homestay.max_guests || '-'}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {new Date(homestay.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => router.push(`/dashboard/homestays/${homestay.id}/edit`)}
+                              title="Edit homestay"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => router.push(`/dashboard/homestays/${homestay.id}/edit?tab=rooms`)}
+                              title="Manage rooms"
+                            >
+                              <Bed className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(homestay)}
+                              title="Delete homestay"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
+        </CardContent>
+        
+        {/* Paginación */}
+        {pagination.pages > 1 && (
+          <CardFooter>
+            <div className="flex items-center w-full justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {pagination.page} of {pagination.pages}
+              </div>
+              <div className="flex items-center space-x-2">
                 <Button
-                  key={pageNum}
-                  variant={pageNum === pagination.page ? "default" : "outline"}
+                  variant="outline"
                   size="sm"
-                  onClick={() => handlePageChange(pageNum)}
-                  className="w-8 h-8 p-0"
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1}
                 >
-                  {pageNum}
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
                 </Button>
-              ))}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={pagination.page >= pagination.pages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                
+                {getPageNumbers().map((pageNum) => (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === pagination.page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.pages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        )}
+      </Card>
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Homestay</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{homestayToDelete?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600 mb-4">
+              This will permanently delete:
+            </p>
+            <ul className="text-sm text-gray-600 space-y-1 ml-4">
+              <li>• The homestay and all its information</li>
+              <li>• All associated images</li>
+              <li>• All rooms and their features</li>
+              <li>• All reviews and ratings</li>
+              <li>• All translations</li>
+              <li>• Any related activities (will be unlinked)</li>
+            </ul>
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> This action cannot be undone. Make sure you have backed up any important information.
+              </p>
             </div>
           </div>
-        </CardFooter>
-      )}
-    </Card>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Homestay'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 } 

@@ -5,7 +5,7 @@
 <a href="https://next-admin-dash.vercel.app/">Demo</a>
 <span> · </span>
 <a href="https://vercel.com/templates/next.js/admin-dashboard-tailwind-postgres-react-nextjs">Clone & Deploy</a>
-<span> 
+<span>  
 </div>  
   
 ## Overview      

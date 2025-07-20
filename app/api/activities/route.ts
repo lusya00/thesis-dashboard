@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Configuración de CORS
+// Configuración de CORS - Solo acceso interno
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // Permite todos los orígenes - puedes cambiarlo a dominios específicos
+  'Access-Control-Allow-Origin': 'http://localhost:3000', // Solo acceso desde el mismo origen
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
   'Access-Control-Max-Age': '86400', // 24 horas

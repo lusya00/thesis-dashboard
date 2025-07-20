@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Loader2, Pencil, Search, Filter, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Pencil, Search, Filter, X, Grid3X3, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, useMemo } from 'react';
 import { activities } from 'generated/prisma';
@@ -69,6 +69,7 @@ export function ActivitiesTable({
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
   const [managerFilter, setManagerFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const getStatus = (status: string) => {
     if (status === 'active') return 'Active';
@@ -238,19 +239,39 @@ export function ActivitiesTable({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
         <div>
-          <CardTitle>Activities</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">Activities</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Manage your activities and view their information.
           </CardDescription>
         </div>
-        <CreateActivityModal onSuccess={fetchActivities} />
+        <div className="flex items-center space-x-2">
+          <div className="flex border rounded-md">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="rounded-r-none"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="rounded-l-none"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+          </div>
+          <CreateActivityModal onSuccess={fetchActivities} />
+        </div>
       </CardHeader>
       
       {/* Filtros */}
-      <div className="px-6 pb-4 space-y-4">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="px-4 sm:px-6 pb-4 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           {/* Búsqueda */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -264,7 +285,7 @@ export function ActivitiesTable({
           
           {/* Filtro por estado */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full lg:w-[150px]">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -278,7 +299,7 @@ export function ActivitiesTable({
           
           {/* Filtro por categoría */}
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full lg:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -293,7 +314,7 @@ export function ActivitiesTable({
           
           {/* Filtro por dificultad */}
           <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-            <SelectTrigger className="w-full lg:w-[150px]">
+            <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="Difficulty" />
             </SelectTrigger>
             <SelectContent>
@@ -307,7 +328,7 @@ export function ActivitiesTable({
           
           {/* Filtro por manager */}
           <Select value={managerFilter} onValueChange={setManagerFilter}>
-            <SelectTrigger className="w-full lg:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Manager" />
             </SelectTrigger>
             <SelectContent>
@@ -323,32 +344,32 @@ export function ActivitiesTable({
         
         {/* Mostrar filtros activos */}
         {hasActiveFilters && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-600">
               <Filter className="h-4 w-4" />
               <span>Active filters:</span>
               {searchTerm && (
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                   Search: "{searchTerm}"
                 </span>
               )}
               {statusFilter !== 'all' && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
                   Status: {getStatus(statusFilter)}
                 </span>
               )}
               {categoryFilter !== 'all' && (
-                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
                   Category: {getCategory(categoryFilter)}
                 </span>
               )}
               {difficultyFilter !== 'all' && (
-                <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
                   Difficulty: {getDifficultyLevel(difficultyFilter)}
                 </span>
               )}
               {managerFilter !== 'all' && (
-                <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
+                <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">
                   Manager: {uniqueManagers.find(m => m?.id?.toString() === managerFilter)?.name || 'Unassigned'}
                 </span>
               )}
@@ -357,7 +378,7 @@ export function ActivitiesTable({
               variant="ghost"
               size="sm"
               onClick={clearFilters}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 w-full sm:w-auto"
             >
               <X className="h-4 w-4 mr-1" />
               Clear filters
@@ -395,68 +416,128 @@ export function ActivitiesTable({
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Image</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Homestay</TableHead>
-                    <TableHead>Manager</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden md:table-cell">Difficulty</TableHead>
-                    <TableHead className="hidden md:table-cell">Bookings</TableHead>
-                    <TableHead className="hidden md:table-cell">Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedActivities.map((activity) => {
-                    const primaryImage = activity.activity_images?.find(img => img.is_primary) || activity.activity_images?.[0];
-                    const totalBookings = getTotalBookings(activity.activity_bookings);
-                    return (
-                      <TableRow key={activity.id}>
-                        <TableCell>{activity.id}</TableCell>
-                        <TableCell>
-                          {primaryImage ? (
-                            <Image
-                              src={primaryImage.img_url}
-                              width={100}
-                              height={100}
-                              alt="Activity image"
-                              className="w-12 h-12 object-cover rounded-lg border"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <span className="text-gray-400 text-xs">No image</span>
+              <>
+                {viewMode === 'table' ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="hidden sm:table-cell">ID</TableHead>
+                          <TableHead>Image</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead className="hidden lg:table-cell">Category</TableHead>
+                          <TableHead className="hidden md:table-cell">Price</TableHead>
+                          <TableHead className="hidden lg:table-cell">Location</TableHead>
+                          <TableHead className="hidden xl:table-cell">Homestay</TableHead>
+                          <TableHead className="hidden xl:table-cell">Manager</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="hidden md:table-cell">Difficulty</TableHead>
+                          <TableHead className="hidden lg:table-cell">Bookings</TableHead>
+                          <TableHead className="hidden xl:table-cell">Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedActivities.map((activity) => {
+                          const primaryImage = activity.activity_images?.find(img => img.is_primary) || activity.activity_images?.[0];
+                          const totalBookings = getTotalBookings(activity.activity_bookings);
+                          return (
+                            <TableRow key={activity.id}>
+                              <TableCell className="hidden sm:table-cell">{activity.id}</TableCell>
+                              <TableCell>
+                                {primaryImage ? (
+                                  <Image
+                                    src={primaryImage.img_url}
+                                    width={100}
+                                    height={100}
+                                    alt="Activity image"
+                                    className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg border"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs">No image</span>
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium max-w-[150px] sm:max-w-none">
+                                <div className="truncate">{activity.title}</div>
+                                <div className="text-xs text-gray-500 sm:hidden">
+                                  {getCategory(activity.category)} • IDR {String(activity.price)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell">{getCategory(activity.category)}</TableCell>
+                              <TableCell className="hidden md:table-cell">IDR {String(activity.price)}</TableCell>
+                              <TableCell className="hidden lg:table-cell">{activity.location}</TableCell>
+                              <TableCell className="hidden xl:table-cell">{activity.homestay?.title || 'Not assigned'}</TableCell>
+                              <TableCell className="hidden xl:table-cell">{activity.admin_users?.name || 'Not assigned'}</TableCell>
+                              <TableCell>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getColorStatus(activity.status)} text-white`}>
+                                  {getStatus(activity.status)}
+                                </span>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">{getDifficultyLevel(activity.difficulty_level)}</TableCell>
+                              <TableCell className="hidden lg:table-cell">{totalBookings}</TableCell>
+                              <TableCell className="hidden xl:table-cell">{new Date(activity.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                <EditActivityModal activity={activity} onSuccess={fetchActivities} />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {paginatedActivities.map((activity) => {
+                      const primaryImage = activity.activity_images?.find(img => img.is_primary) || activity.activity_images?.[0];
+                      const totalBookings = getTotalBookings(activity.activity_bookings);
+                      return (
+                        <Card key={activity.id} className="overflow-hidden">
+                          <div className="aspect-video relative bg-gray-100">
+                            {primaryImage ? (
+                              <Image
+                                src={primaryImage.img_url}
+                                fill
+                                alt="Activity image"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <span className="text-gray-400 text-sm">No image</span>
+                              </div>
+                            )}
+                            <div className="absolute top-2 right-2">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getColorStatus(activity.status)} text-white`}>
+                                {getStatus(activity.status)}
+                              </span>
                             </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">{activity.title}</TableCell>
-                        <TableCell>{getCategory(activity.category)}</TableCell>
-                        <TableCell>IDR {String(activity.price)}</TableCell>
-                        <TableCell>{activity.location}</TableCell>
-                        <TableCell>{activity.homestay?.title || 'Not assigned'}</TableCell>
-                        <TableCell>{activity.admin_users?.name || 'Not assigned'}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getColorStatus(activity.status)} text-white`}>
-                            {getStatus(activity.status)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{getDifficultyLevel(activity.difficulty_level)}</TableCell>
-                        <TableCell className="hidden md:table-cell">{totalBookings}</TableCell>
-                        <TableCell className="hidden md:table-cell">{new Date(activity.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <EditActivityModal activity={activity} onSuccess={fetchActivities} />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          </div>
+                          <CardContent className="p-4">
+                            <div className="space-y-2">
+                              <div>
+                                <h3 className="font-semibold text-sm truncate">{activity.title}</h3>
+                                <p className="text-xs text-gray-500">{getCategory(activity.category)}</p>
+                              </div>
+                              <div className="text-sm">
+                                <p className="font-medium">IDR {String(activity.price)}</p>
+                                <p className="text-xs text-gray-500">{activity.location}</p>
+                              </div>
+                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span>{activity.admin_users?.name || 'Not assigned'}</span>
+                                <span>{totalBookings} bookings</span>
+                              </div>
+                              <div className="pt-2">
+                                <EditActivityModal activity={activity} onSuccess={fetchActivities} />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -465,8 +546,8 @@ export function ActivitiesTable({
       {/* Paginación */}
       {filteredData.length > 0 && (
         <CardFooter>
-          <div className="flex items-center w-full justify-between">
-            <div className="text-xs text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center w-full justify-between space-y-3 sm:space-y-0">
+            <div className="text-xs text-muted-foreground text-center sm:text-left">
               Showing{' '}
               <strong>
                 {startIndex + 1}-{Math.min(endIndex, filteredData.length)}
@@ -478,15 +559,16 @@ export function ActivitiesTable({
                 </span>
               )}
             </div>
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={prevPage}
                 disabled={currentPage === 1}
+                className="h-8 px-2 sm:px-3"
               >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
+                <ChevronLeft className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Previous</span>
               </Button>
               <div className="flex items-center space-x-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -497,14 +579,14 @@ export function ActivitiesTable({
                       variant={currentPage === pageNum ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setCurrentPage(pageNum)}
-                      className="w-8 h-8 p-0"
+                      className="w-7 h-8 sm:w-8 p-0 text-xs sm:text-sm"
                     >
                       {pageNum}
                     </Button>
                   );
                 })}
                 {totalPages > 5 && (
-                  <span className="px-2 text-sm text-gray-500">...</span>
+                  <span className="px-1 sm:px-2 text-xs sm:text-sm text-gray-500">...</span>
                 )}
               </div>
               <Button
@@ -512,9 +594,10 @@ export function ActivitiesTable({
                 size="sm"
                 onClick={nextPage}
                 disabled={currentPage === totalPages}
+                className="h-8 px-2 sm:px-3"
               >
-                Next
-                <ChevronRight className="ml-2 h-4 w-4" />
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-4 w-4 ml-1 sm:ml-2" />
               </Button>
             </div>
           </div>

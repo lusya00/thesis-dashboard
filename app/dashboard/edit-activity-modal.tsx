@@ -162,10 +162,15 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
     try {
       const response = await fetch('/api/users');
       const data = await response.json();
-      setUsers(data.users || []);
-      setFilteredUsers(data.users || []);
+      // Extraer el array users del objeto de respuesta
+      const usersArray = data.users || [];
+      setUsers(usersArray);
+      setFilteredUsers(usersArray);
     } catch (error) {
       console.error('Error loading users:', error);
+      // En caso de error, establecer arrays vacíos
+      setUsers([]);
+      setFilteredUsers([]);
     }
   };
 
@@ -173,10 +178,16 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
     try {
       const response = await fetch('/api/homestay');
       const data = await response.json();
-      setHomestays(data);
-      setFilteredHomestays(data);
+      console.log("data", data);
+      // Extraer el array homestays del objeto de respuesta
+      const homestaysArray = data.homestays || [];
+      setHomestays(homestaysArray);
+      setFilteredHomestays(homestaysArray);
     } catch (error) {
       console.error('Error loading homestays:', error);
+      // En caso de error, establecer arrays vacíos
+      setHomestays([]);
+      setFilteredHomestays([]);
     }
   };
 
@@ -293,11 +304,11 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-y-auto sm:w-[90vw] md:w-[85vw] lg:w-[80vw] xl:w-[75vw]">
+        <DialogHeader className="pb-4 sm:pb-6">
+          <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
             <span>Edit Activity</span>
-            <Badge variant="outline" className="ml-2">
+            <Badge variant="outline" className="ml-0 sm:ml-2">
               ID: {activity.id}
             </Badge>
           </DialogTitle>
@@ -313,34 +324,34 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
         )}
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="general" className="flex items-center space-x-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">General</span>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+            <TabsTrigger value="general" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>General</span>
             </TabsTrigger>
-            <TabsTrigger value="details" className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Details</span>
+            <TabsTrigger value="details" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Details</span>
             </TabsTrigger>
-            <TabsTrigger value="pricing" className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline">Pricing</span>
+            <TabsTrigger value="pricing" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Pricing</span>
             </TabsTrigger>
-            <TabsTrigger value="images" className="flex items-center space-x-2">
-              <ImageIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Images</span>
+            <TabsTrigger value="images" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Images</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="space-y-6">
+          <TabsContent value="general" className="space-y-4 sm:space-y-6">
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Basic Information */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Basic Information</CardTitle>
+                  <CardHeader className="pb-3 sm:pb-6">
+                    <CardTitle className="text-base sm:text-lg">Basic Information</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="title">Title *</Label>
                       <Input
@@ -415,10 +426,10 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
 
                 {/* Location & Contact */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Location & Contact</CardTitle>
+                  <CardHeader className="pb-3 sm:pb-6">
+                    <CardTitle className="text-base sm:text-lg">Location & Contact</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="location">Location *</Label>
                       <Input
@@ -480,12 +491,12 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
               </div>
 
               {/* Assignments */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-lg">Assignments</CardTitle>
+              <Card className="mt-4 sm:mt-6">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Assignments</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="manager_id">Manager</Label>
                       <div className="relative user-search-container">
@@ -497,22 +508,22 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
                           onChange={(e) => {
                             const searchTerm = e.target.value.toLowerCase();
                             if (searchTerm.trim() === '') {
-                              setFilteredUsers(users);
+                              setFilteredUsers(Array.isArray(users) ? users : []);
                             } else {
-                              const filtered = users.filter((user: User) => 
+                              const filtered = Array.isArray(users) ? users.filter((user: User) => 
                                 user.name.toLowerCase().includes(searchTerm) ||
                                 user.email.toLowerCase().includes(searchTerm)
-                              );
+                              ) : [];
                               setFilteredUsers(filtered);
                             }
                           }}
                         />
                         {showUserDropdown && filteredUsers.length > 0 && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 sm:max-h-60 overflow-y-auto">
                             {filteredUsers.map((user: User) => (
                               <div
                                 key={user.id}
-                                className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                                className={`px-2 sm:px-3 py-2 cursor-pointer hover:bg-gray-100 ${
                                   formData.manager_id === user.id.toString() ? 'bg-blue-50' : ''
                                 }`}
                                 onClick={() => {
@@ -520,20 +531,20 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
                                   setShowUserDropdown(false);
                                 }}
                               >
-                                <div className="font-medium">{user.name}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
+                                <div className="font-medium text-sm">{user.name}</div>
+                                <div className="text-xs text-gray-500">{user.email}</div>
                               </div>
                             ))}
                           </div>
                         )}
                         {formData.manager_id && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded border">
+                          <div className="mt-2 p-2 sm:p-3 bg-gray-50 rounded border">
                             <div className="flex items-center justify-between">
-                              <div className="text-sm">
+                              <div className="text-xs sm:text-sm">
                                 <span className="font-medium">Selected:</span>
                                 <div className="text-gray-600">
-                                  {users.find((u: User) => u.id.toString() === formData.manager_id)?.name} 
-                                  ({users.find((u: User) => u.id.toString() === formData.manager_id)?.email})
+                                  {Array.isArray(users) && users.find((u: User) => u.id.toString() === formData.manager_id)?.name} 
+                                  ({Array.isArray(users) && users.find((u: User) => u.id.toString() === formData.manager_id)?.email})
                                 </div>
                               </div>
                               <Button
@@ -562,22 +573,22 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
                           onChange={(e) => {
                             const searchTerm = e.target.value.toLowerCase();
                             if (searchTerm.trim() === '') {
-                              setFilteredHomestays(homestays);
+                              setFilteredHomestays(Array.isArray(homestays) ? homestays : []);
                             } else {
-                              const filtered = homestays.filter((homestay: Homestay) => 
+                              const filtered = Array.isArray(homestays) ? homestays.filter((homestay: Homestay) => 
                                 homestay.title.toLowerCase().includes(searchTerm) ||
                                 homestay.location.toLowerCase().includes(searchTerm)
-                              );
+                              ) : [];
                               setFilteredHomestays(filtered);
                             }
                           }}
                         />
                         {showHomestayDropdown && filteredHomestays.length > 0 && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 sm:max-h-60 overflow-y-auto">
                             {filteredHomestays.map((homestay: Homestay) => (
                               <div
                                 key={homestay.id}
-                                className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                                className={`px-2 sm:px-3 py-2 cursor-pointer hover:bg-gray-100 ${
                                   formData.homestay_id === homestay.id.toString() ? 'bg-blue-50' : ''
                                 }`}
                                 onClick={() => {
@@ -585,20 +596,20 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
                                   setShowHomestayDropdown(false);
                                 }}
                               >
-                                <div className="font-medium">{homestay.title}</div>
-                                <div className="text-sm text-gray-500">{homestay.location}</div>
+                                <div className="font-medium text-sm">{homestay.title}</div>
+                                <div className="text-xs text-gray-500">{homestay.location}</div>
                               </div>
                             ))}
                           </div>
                         )}
                         {formData.homestay_id && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded border">
+                          <div className="mt-2 p-2 sm:p-3 bg-gray-50 rounded border">
                             <div className="flex items-center justify-between">
-                              <div className="text-sm">
+                              <div className="text-xs sm:text-sm">
                                 <span className="font-medium">Selected:</span>
                                 <div className="text-gray-600">
-                                  {homestays.find((h: Homestay) => h.id.toString() === formData.homestay_id)?.title} 
-                                  ({homestays.find((h: Homestay) => h.id.toString() === formData.homestay_id)?.location})
+                                  {Array.isArray(homestays) && homestays.find((h: Homestay) => h.id.toString() === formData.homestay_id)?.title} 
+                                  ({Array.isArray(homestays) && homestays.find((h: Homestay) => h.id.toString() === formData.homestay_id)?.location})
                                 </div>
                               </div>
                               <Button
@@ -620,8 +631,8 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
               </Card>
 
               {/* Featured Activity */}
-              <Card className="mt-6">
-                <CardContent className="pt-6">
+              <Card className="mt-4 sm:mt-6">
+                <CardContent className="pt-4 sm:pt-6">
                   <div className="flex items-center space-x-2">
                     <input
                       id="is_featured"
@@ -638,15 +649,15 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
             </form>
           </TabsContent>
 
-          <TabsContent value="details" className="space-y-6">
+          <TabsContent value="details" className="space-y-4 sm:space-y-6">
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Descriptions */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Descriptions</CardTitle>
+                  <CardHeader className="pb-3 sm:pb-6">
+                    <CardTitle className="text-base sm:text-lg">Descriptions</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="short_description">Short Description</Label>
                       <textarea
@@ -677,10 +688,10 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
 
                 {/* Requirements & Policies */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Requirements & Policies</CardTitle>
+                  <CardHeader className="pb-3 sm:pb-6">
+                    <CardTitle className="text-base sm:text-lg">Requirements & Policies</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="age_restriction">Age Restriction</Label>
                       <Input
@@ -722,12 +733,12 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
               </div>
 
               {/* What's Included/Excluded */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-lg">What's Included & Excluded</CardTitle>
+              <Card className="mt-4 sm:mt-6">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">What's Included & Excluded</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="includes">What's Included</Label>
                       <textarea
@@ -759,14 +770,14 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
             </form>
           </TabsContent>
 
-          <TabsContent value="pricing" className="space-y-6">
+          <TabsContent value="pricing" className="space-y-4 sm:space-y-6">
             <form onSubmit={handleSubmit}>
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Pricing & Capacity</CardTitle>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Pricing & Capacity</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CardContent className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="price">Price (IDR) *</Label>
                       <Input
@@ -804,7 +815,7 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="max_participants">Max Participants *</Label>
                       <Input
@@ -835,10 +846,10 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
             </form>
           </TabsContent>
 
-          <TabsContent value="images" className="space-y-6">
+          <TabsContent value="images" className="space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Activity Images</CardTitle>
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="text-base sm:text-lg">Activity Images</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-12">
@@ -856,12 +867,13 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
         </Tabs>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center pt-6 border-t">
+        <div className="flex flex-col sm:flex-row justify-between items-center pt-4 sm:pt-6 border-t gap-3 sm:gap-0">
           <Button
             type="button"
             variant="destructive"
             onClick={handleDelete}
             disabled={deleteLoading}
+            className="w-full sm:w-auto"
           >
             {deleteLoading ? (
               <>
@@ -871,21 +883,24 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
             ) : (
               <>
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete Activity
+                <span className="hidden sm:inline">Delete Activity</span>
+                <span className="sm:hidden">Delete</span>
               </>
             )}
           </Button>
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleSubmit}
               disabled={loading}
+              className="w-full sm:w-auto"
             >
               {loading ? (
                 <>

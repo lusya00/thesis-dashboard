@@ -19,12 +19,13 @@ export async function OPTIONS() {
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const id = parseInt(params.id);
+        const { id } = await params;
+        const idNumber = parseInt(id);
         
-        if (isNaN(id)) {
+        if (isNaN(idNumber)) {
             return new NextResponse(
                 JSON.stringify({ 
                     success: false,
@@ -42,7 +43,7 @@ export async function GET(
         }
 
         const activity = await prisma.activities.findUnique({
-            where: { id },
+            where: { id: idNumber },
             include: {
                 // Información del administrador/manager
                 admin_users: {

@@ -418,23 +418,20 @@ export function ActivitiesTable({
             ) : (
               <>
                 {viewMode === 'table' ? (
-                  <div className="overflow-x-auto">
+                  <div className="w-full overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="hidden sm:table-cell">ID</TableHead>
-                          <TableHead>Image</TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead className="hidden lg:table-cell">Category</TableHead>
-                          <TableHead className="hidden md:table-cell">Price</TableHead>
-                          <TableHead className="hidden lg:table-cell">Location</TableHead>
-                          <TableHead className="hidden xl:table-cell">Homestay</TableHead>
-                          <TableHead className="hidden xl:table-cell">Manager</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="hidden md:table-cell">Difficulty</TableHead>
-                          <TableHead className="hidden lg:table-cell">Bookings</TableHead>
-                          <TableHead className="hidden xl:table-cell">Date</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead className="w-12">Image</TableHead>
+                          <TableHead className="min-w-[200px]">Title & Info</TableHead>
+                          <TableHead className="hidden md:table-cell w-24">Price</TableHead>
+                          <TableHead className="hidden lg:table-cell w-28">Category</TableHead>
+                          <TableHead className="hidden lg:table-cell w-32">Location</TableHead>
+                          <TableHead className="w-20">Status</TableHead>
+                          <TableHead className="hidden md:table-cell w-24">Difficulty</TableHead>
+                          <TableHead className="hidden xl:table-cell w-32">Manager</TableHead>
+                          <TableHead className="hidden xl:table-cell w-24">Bookings</TableHead>
+                          <TableHead className="w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -443,42 +440,69 @@ export function ActivitiesTable({
                           const totalBookings = getTotalBookings(activity.activity_bookings);
                           return (
                             <TableRow key={activity.id}>
-                              <TableCell className="hidden sm:table-cell">{activity.id}</TableCell>
-                              <TableCell>
+                              <TableCell className="w-12">
                                 {primaryImage ? (
                                   <Image
                                     src={primaryImage.img_url}
-                                    width={100}
-                                    height={100}
+                                    width={40}
+                                    height={40}
                                     alt="Activity image"
-                                    className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg border"
+                                    className="w-8 h-8 object-cover rounded border"
                                   />
                                 ) : (
-                                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    <span className="text-gray-400 text-xs">No image</span>
+                                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs">-</span>
                                   </div>
                                 )}
                               </TableCell>
-                              <TableCell className="font-medium max-w-[150px] sm:max-w-none">
-                                <div className="truncate">{activity.title}</div>
-                                <div className="text-xs text-gray-500 sm:hidden">
-                                  {getCategory(activity.category)} • IDR {String(activity.price)}
+                              <TableCell className="min-w-[200px]">
+                                <div className="space-y-1">
+                                  <div className="font-medium text-sm truncate">{activity.title}</div>
+                                  <div className="text-xs text-gray-500 space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                      <span>ID: {activity.id}</span>
+                                      <span>•</span>
+                                      <span>{getCategory(activity.category)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span>{activity.location}</span>
+                                      {activity.homestay?.title && (
+                                        <>
+                                          <span>•</span>
+                                          <span className="truncate">{activity.homestay.title}</span>
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-gray-400">
+                                      {new Date(activity.created_at).toLocaleDateString()}
+                                    </div>
+                                  </div>
                                 </div>
                               </TableCell>
-                              <TableCell className="hidden lg:table-cell">{getCategory(activity.category)}</TableCell>
-                              <TableCell className="hidden md:table-cell">IDR {String(activity.price)}</TableCell>
-                              <TableCell className="hidden lg:table-cell">{activity.location}</TableCell>
-                              <TableCell className="hidden xl:table-cell">{activity.homestay?.title || 'Not assigned'}</TableCell>
-                              <TableCell className="hidden xl:table-cell">{activity.admin_users?.name || 'Not assigned'}</TableCell>
-                              <TableCell>
+                              <TableCell className="hidden md:table-cell w-24">
+                                <div className="text-sm font-medium">IDR {String(activity.price)}</div>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell w-28">
+                                <div className="text-sm">{getCategory(activity.category)}</div>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell w-32">
+                                <div className="text-sm truncate">{activity.location}</div>
+                              </TableCell>
+                              <TableCell className="w-20">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getColorStatus(activity.status)} text-white`}>
                                   {getStatus(activity.status)}
                                 </span>
                               </TableCell>
-                              <TableCell className="hidden md:table-cell">{getDifficultyLevel(activity.difficulty_level)}</TableCell>
-                              <TableCell className="hidden lg:table-cell">{totalBookings}</TableCell>
-                              <TableCell className="hidden xl:table-cell">{new Date(activity.created_at).toLocaleDateString()}</TableCell>
-                              <TableCell>
+                              <TableCell className="hidden md:table-cell w-24">
+                                <div className="text-sm">{getDifficultyLevel(activity.difficulty_level)}</div>
+                              </TableCell>
+                              <TableCell className="hidden xl:table-cell w-32">
+                                <div className="text-sm truncate">{activity.admin_users?.name || 'Not assigned'}</div>
+                              </TableCell>
+                              <TableCell className="hidden xl:table-cell w-24">
+                                <div className="text-sm font-medium">{totalBookings}</div>
+                              </TableCell>
+                              <TableCell className="w-20">
                                 <EditActivityModal activity={activity} onSuccess={fetchActivities} />
                               </TableCell>
                             </TableRow>

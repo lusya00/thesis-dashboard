@@ -498,12 +498,14 @@ export default function BookingsPage() {
                                   >
                                     Cancel Booking
                                   </Button>
-                                  <Button
-                                    onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                                    className="bg-green-600 hover:bg-green-700"
-                                  >
-                                    Confirm Booking
-                                  </Button>
+                                  {userRole === 'super_admin' && (
+                                    <Button
+                                      onClick={() => handleStatusChange(booking.id, 'confirmed')}
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      Confirm Booking
+                                    </Button>
+                                  )}
                                 </>
                               )}
                               {booking.status === 'confirmed' && (
@@ -515,7 +517,7 @@ export default function BookingsPage() {
                                 </Button>
                               )}
                               
-                              {!booking.is_paid && (
+                              {!booking.is_paid && userRole === 'super_admin' && (
                                 <Button
                                   variant="outline"
                                   onClick={() => handlePaymentStatusChange(booking.id, true)}
@@ -526,7 +528,7 @@ export default function BookingsPage() {
                                 </Button>
                               )}
                               
-                              {booking.is_paid && (
+                              {booking.is_paid && userRole === 'super_admin' && (
                                 <Button
                                   variant="outline"
                                   onClick={() => handlePaymentStatusChange(booking.id, false)}
@@ -541,7 +543,7 @@ export default function BookingsPage() {
                         </DialogContent>
                       </Dialog>
                       
-                      {!booking.is_paid && (
+                      {!booking.is_paid && userRole === 'super_admin' && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -553,7 +555,7 @@ export default function BookingsPage() {
                         </Button>
                       )}
                       
-                      {booking.is_paid && (
+                      {booking.is_paid && userRole === 'super_admin' && (
                         <Button
                           variant="outline"
                           size="sm"

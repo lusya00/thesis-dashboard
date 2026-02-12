@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { validateWebPFile } from '@/lib/supabase'
+import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
 
 export interface ImageFile {
   file: File
@@ -104,7 +104,7 @@ export function ImageUpload({
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-600 mb-2">
-        Upload images in WebP format (maximum 2MB each). Maximum {maxImages} images.
+        Upload images in JPEG, PNG, or WebP format (maximum 5MB each). Maximum {maxImages} images.
       </div>
       
       {/* Drop area */}
@@ -137,7 +137,7 @@ export function ImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".webp"
+        accept=".jpeg,.jpg,.png,.webp"
         multiple
         onChange={handleFileInputChange}
         className="hidden"

@@ -1,23 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { uploadHomestayImageServer, validateWebPFileServer } from '@/lib/supabase-server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Starting homestay image upload process...')
+
     const formData = await request.formData()
     const homestayId = formData.get('homestayId') as string
     const file = formData.get('file') as File
     const isPrimary = formData.get('isPrimary') === 'true'
 
+    console.log('Form data received:', { homestayId, fileName: file?.name, fileSize: file?.size, fileType: file?.type, isPrimary })
+
     if (!homestayId || !file) {
+      console.log('Missing required fields')
       return NextResponse.json(
-        { error: 'HomestayId y archivo son requeridos' },
+        { error: 'HomestayId and file are required' },
         { status: 400 }
       )
     }
 
-    // Validar el archivo
+    // Validate file
+    console.log('Validating file...')
     const validation = validateWebPFileServer(file)
+    console.log('Validation result:', validation)
     if (!validation.valid) {
       return NextResponse.json(
         { error: validation.error },
@@ -25,22 +32,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar que el homestay existe
+    // Check if homestay exists
+    console.log('Checking if homestay exists...')
     const homestayExists = await prisma.homestay.findUnique({
       where: { id: parseInt(homestayId) }
     })
 
     if (!homestayExists) {
+      console.log('Homestay not found')
       return NextResponse.json(
-        { error: 'Homestay no encontrado' },
+        { error: 'Homestay not found' },
         { status: 404 }
       )
     }
 
-    // Subir imagen a Supabase Storage
+    // Upload to S3
+    console.log('Uploading to S3...')
     const imageUrl = await uploadHomestayImageServer(file, parseInt(homestayId))
+    console.log('S3 upload successful, URL:', imageUrl)
 
-    // Si es imagen primaria, actualizar la anterior
+    // If this is primary, update other images to not be primary
     if (isPrimary) {
       await prisma.homestayImages.updateMany({
         where: { homestay_id: parseInt(homestayId) },
@@ -48,13 +59,13 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Obtener el último orden
+    // Get the last order
     const lastImage = await prisma.homestayImages.findFirst({
       where: { homestay_id: parseInt(homestayId) },
       orderBy: { order: 'desc' }
     })
 
-    // Crear registro en la base de datos
+    // Create database record
     const homestayImage = await prisma.homestayImages.create({
       data: {
         img_url: imageUrl,
@@ -64,11 +75,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log('Database record created:', homestayImage)
     return NextResponse.json(homestayImage)
   } catch (error) {
-    console.error('Error subiendo imagen:', error)
+    console.error('Error uploading homestay image:', error)
     return NextResponse.json(
-      { error: 'Error al subir la imagen' },
+      { error: 'Failed to upload image' },
       { status: 500 }
     )
   }

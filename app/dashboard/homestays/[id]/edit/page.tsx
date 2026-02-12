@@ -1,20 +1,18 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ImageFile, ImageUpload } from '@/components/ui/image-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Plus, Trash2, Pencil, X, Settings } from 'lucide-react';
-import { homestay, homestayImages, homestayRoom, room_features } from 'generated/prisma';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { uploadHomestayImage, deleteHomestayImage, validateWebPFile } from '@/lib/supabase';
-import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
+import { homestay, homestayImages, homestayRoom, room_features } from 'generated/prisma';
+import { Loader2, Pencil, Plus, Settings, Trash2, Upload, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { use, useEffect, useState } from 'react';
 
 interface User {
   id: number;
@@ -643,7 +641,7 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
 
     setUploadingImages(true);
     setError('');
-    
+
     try {
       const imageUploadPromises = selectedImages.map(async (image, index) => {
         const formData = new FormData();
@@ -658,22 +656,31 @@ export default function EditHomestayPage({ params }: { params: Promise<{ id: str
 
         if (!uploadResponse.ok) {
           const errorData = await uploadResponse.json();
-          throw new Error(errorData.error || 'Error al subir imagen');
+          throw new Error(errorData.error || 'Error uploading image');
         }
 
-        return uploadResponse.json();
+        return await uploadResponse.json();
       });
 
-      await Promise.all(imageUploadPromises);
-      
-      // Reload images
-      fetchHomestay();
-      
+      const uploadedImages = await Promise.all(imageUploadPromises);
+
+      // Update homestay state immediately with new images
+      setHomestay(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          homestayImages: [...(prev.homestayImages || []), ...uploadedImages]
+        };
+      });
+
       // Clear selected images
       setSelectedImages([]);
-      
-      // Incrementar la key para forzar el reinicio del componente ImageUpload
+
+      // Increment key to force ImageUpload component reset
       setImageUploadKey(prev => prev + 1);
+
+      // Reload from server to ensure consistency
+      fetchHomestay();
     } catch (error) {
       console.error('Error uploading images:', error);
       setError(error instanceof Error ? error.message : 'Error uploading images');

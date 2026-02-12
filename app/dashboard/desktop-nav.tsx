@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
-import { Home, LineChart, Package, Settings, ShoppingCart, Users2, Calendar } from 'lucide-react';
-import { NavItem } from './nav-item';
 import { VercelLogo } from '@/components/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Calendar, Home, LineChart, Megaphone, Package, Settings, ShoppingCart, Users2 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { NavItem } from './nav-item';
 
 export function DesktopNav() {
   const [userRole, setUserRole] = useState<string>('');
@@ -44,6 +44,10 @@ export function DesktopNav() {
         <NavItem href="/dashboard/homestays" label="Homestays">
           <Package className="h-5 w-5" />
         </NavItem>
+
+        <NavItem href="/dashboard/promotions" label="Promotion">
+            <Megaphone className="h-5 w-5" />
+          </NavItem>
 
         {/* Show Activities only for super_admin and activity_manager */}
         {(userRole === 'super_admin' || userRole === 'activity_manager') && (

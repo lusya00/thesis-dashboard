@@ -1,22 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose
-} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { ImageFile, ImageUpload } from '@/components/ui/image-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Pencil, Loader2, X } from 'lucide-react';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
+} from '@/components/ui/sheet';
 import { homestay } from 'generated/prisma';
-import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
+import { Loader2, Pencil, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 // Interfaces
 interface User {
@@ -53,6 +53,7 @@ export function EditHomestayModal({ homestay, onSuccess }: EditHomestayModalProp
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [images, setImages] = useState<ImageFile[]>([]);
   const [existingImages, setExistingImages] = useState<Array<{ id: number; img_url: string; is_primary: boolean; order: number }>>([]);
+  const [homestayImages, setHomestayImages] = useState<Array<{ id: number; img_url: string; is_primary: boolean; order: number }>>([]);
   const [formData, setFormData] = useState({
     title: homestay.title,
     description: homestay.description || '',

@@ -78,18 +78,80 @@ export async function deleteHomestayImageServer(imageUrl: string): Promise<void>
   }
 }
 
-// Función para validar archivo WebP (versión servidor)
+// Función para subir imagen de actividad usando S3 (versión servidor)
+export async function uploadActivityImageServer(file: File, activityId: number): Promise<string> {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `activity-${activityId}-${Date.now()}.${fileExt}`
+  const bucketName = 'homestay-images' // Use the same bucket as homestays since it works
+
+  try {
+    // Convertir File a Buffer
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    const uploadParams = {
+      Bucket: bucketName,
+      Key: fileName,
+      Body: buffer,
+      ContentType: file.type,
+      CacheControl: 'max-age=3600',
+      ACL: 'public-read' // Hacer la imagen pública
+    }
+
+    // Subir con S3
+    const result = await s3.upload(uploadParams).promise()
+    console.log("S3 Upload result:", result)
+
+    // Generar la URL pública correcta de Supabase
+    const { data: publicUrl } = supabaseAdmin.storage
+      .from(bucketName)
+      .getPublicUrl(fileName)
+
+    console.log("Public URL:", publicUrl.publicUrl)
+    return publicUrl.publicUrl
+  } catch (error) {
+    console.error('Error subiendo imagen a S3:', error)
+    throw error
+  }
+}
+
+// Función para eliminar imagen de actividad usando S3 (versión servidor)
+export async function deleteActivityImageServer(imageUrl: string): Promise<void> {
+  try {
+    // Extraer el nombre del archivo de la URL pública
+    const url = new URL(imageUrl)
+    const pathParts = url.pathname.split('/')
+    const fileName = pathParts[pathParts.length - 1]
+
+    if (!fileName) {
+      throw new Error('No se pudo extraer el nombre del archivo de la URL')
+    }
+
+    const deleteParams = {
+      Bucket: 'homestay-images', // Use the same bucket as homestays
+      Key: fileName
+    }
+
+    await s3.deleteObject(deleteParams).promise()
+  } catch (error) {
+    console.error('Error eliminando imagen de S3:', error)
+    throw error
+  }
+}
+
+// Función para validar archivo de imagen (versión servidor)
 export function validateWebPFileServer(file: File): { valid: boolean; error?: string } {
-  // Validar tipo de archivo
-  if (!file.type.includes('webp')) {
-    return { valid: false, error: 'Solo se permiten archivos WebP' }
+  // Validar tipo de archivo (aceptar JPEG, PNG, WebP)
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Solo se permiten archivos JPEG, PNG o WebP' }
   }
 
-  // Validar tamaño del archivo (máximo 2MB)
-  const maxSize = 2 * 1024 * 1024 // 2MB
+  // Validar tamaño del archivo (máximo 5MB)
+  const maxSize = 5 * 1024 * 1024 // 5MB
   if (file.size > maxSize) {
-    return { valid: false, error: 'El archivo no puede ser mayor a 2MB' }
+    return { valid: false, error: 'El archivo no puede ser mayor a 5MB' }
   }
 
   return { valid: true }
-} 
+}

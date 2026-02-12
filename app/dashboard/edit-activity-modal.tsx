@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -9,15 +11,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Pencil, Loader2, Trash2, Search, X, Settings, Image as ImageIcon, Users, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { activities } from 'generated/prisma';
+import { Calendar, DollarSign, Image as ImageIcon, Loader2, Pencil, Settings, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 // Interfaces
 interface User {
@@ -95,6 +96,9 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
     manager_id: String(activity.manager_id) || ''
   });
   const [error, setError] = useState('');
+  const [activityImages, setActivityImages] = useState<Array<{ id: number; img_url: string; is_primary: boolean; order: number }>>([]);
+  const [existingImages, setExistingImages] = useState<Array<{ id: number; img_url: string; is_primary: boolean; order: number }>>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const categories = [
     { value: 'cultural', label: 'Cultural', icon: '🏛️' },
@@ -155,6 +159,7 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
     if (open) {
       fetchUsers();
       fetchHomestays();
+      fetchExistingImages();
     }
   }, [open]);
 
@@ -188,6 +193,37 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
       // En caso de error, establecer arrays vacíos
       setHomestays([]);
       setFilteredHomestays([]);
+    }
+  };
+
+  const fetchExistingImages = async () => {
+    try {
+      const response = await fetch(`/api/activities/images?activityId=${activity.id}`);
+      if (!response.ok) {
+        console.error('Response not ok:', response.status, response.statusText);
+        setExistingImages([]);
+        return;
+      }
+      const data = await response.json();
+      const imagesArray = data.images || [];
+      setExistingImages(imagesArray);
+    } catch (error) {
+      console.error('Error loading existing images:', error);
+      setExistingImages([]);
+    }
+  };
+
+  const deleteExistingImage = async (imageId: number) => {
+    try {
+      const response = await fetch(`/api/activities/images/${imageId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setExistingImages(prev => prev.filter(img => img.id !== imageId));
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
     }
   };
 
@@ -243,6 +279,8 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error updating activity');
       }
+
+
 
       setOpen(false);
       onSuccess?.();
@@ -850,16 +888,52 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
             <Card>
               <CardHeader className="pb-3 sm:pb-6">
                 <CardTitle className="text-base sm:text-lg">Activity Images</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Manage images for this activity. Upload new images or manage existing ones.
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                <div className="space-y-4">
+                  {/* Existing Images */}
+                  {existingImages.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium">Existing Images</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                        {existingImages.map((image) => (
+                          <div key={image.id} className="relative group">
+                            <img
+                              src={image.img_url}
+                              alt="Activity"
+                              className="w-full h-32 object-cover rounded-lg border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => deleteExistingImage(image.id)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={loading}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                            {image.is_primary && (
+                              <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                Primary
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload New Images */}
+                  <div>
+                    <Label className="text-sm font-medium">Upload New Images</Label>
+                    <ImageUpload
+                      onImagesChange={setActivityImages}
+                      maxImages={10}
+                      disabled={loading}
+                    />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Image management coming soon</h3>
-                  <p className="text-gray-500">
-                    You'll be able to upload and manage activity images here.
-                  </p>
                 </div>
               </CardContent>
             </Card>

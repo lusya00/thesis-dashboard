@@ -78,18 +78,19 @@ export async function deleteHomestayImage(imageUrl: string): Promise<void> {
   }
 }
 
-// Función para validar archivo WebP
+// Función para validar archivo de imagen
 export function validateWebPFile(file: File): { valid: boolean; error?: string } {
-  // Validar tipo de archivo
-  if (!file.type.includes('webp')) {
-    return { valid: false, error: 'Solo se permiten archivos WebP' }
+  // Validar tipo de archivo (aceptar JPEG, PNG, WebP)
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Solo se permiten archivos JPEG, PNG o WebP' }
   }
 
-  // Validar tamaño del archivo (máximo 2MB)
-  const maxSize = 2 * 1024 * 1024 // 2MB
+  // Validar tamaño del archivo (máximo 5MB)
+  const maxSize = 5 * 1024 * 1024 // 5MB
   if (file.size > maxSize) {
-    return { valid: false, error: 'El archivo no puede ser mayor a 2MB' }
+    return { valid: false, error: 'El archivo no puede ser mayor a 5MB' }
   }
 
   return { valid: true }
-} 
+}

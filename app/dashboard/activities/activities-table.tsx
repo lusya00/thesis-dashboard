@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  TableHead,
-  TableRow,
-  TableHeader,
-  TableBody,
-  Table,
-  TableCell
-} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -18,14 +11,21 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Loader2, Pencil, Search, Filter, X, Grid3X3, List } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useEffect, useState, useMemo } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 import { activities } from 'generated/prisma';
+import { ChevronLeft, ChevronRight, Filter, Grid3X3, List, Loader2, Search, X } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { CreateActivityModal } from '../create-activity-modal';
 import { EditActivityModal } from '../edit-activity-modal';
-import Image from 'next/image';
 
 interface Activity extends activities {
   admin_users?: {

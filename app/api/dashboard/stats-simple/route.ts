@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
@@ -58,7 +58,7 @@ export async function GET() {
       const revenueStats = await prisma.payments.aggregate({
         where: {
           booking: bookingWhere,
-          payment_status: 'COMPLETED'
+          payment_status: 'paid'
         },
         _sum: {
           amount: true

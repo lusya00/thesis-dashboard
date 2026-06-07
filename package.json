@@ -37,7 +37,7 @@
     "drizzle-orm": "^0.31.4",
     "drizzle-zod": "^0.5.1",
     "lucide-react": "^0.400.0",
-    "next": "^16.2.7",
+    "next": "^15.2.4",
     "next-auth": "^5.0.0-beta.27",
     "pnpm": "^10.11.0",
     "postcss": "^8.4.49",

@@ -55,15 +55,13 @@ export async function GET() {
       const totalBookings = await prisma.booking.count({ where: bookingWhere });
       
       // 5. Estadísticas de ingresos (una sola consulta agregada)
-      const revenueStats = await prisma.payments.aggregate({
-        where: {
-          booking: bookingWhere,
-          payment_status: 'paid'
-        },
-        _sum: {
-          amount: true
-        }
-      });
+      const revenueResult = await prisma.$queryRaw`
+      SELECT COALESCE(SUM(amount), 0) as total
+      FROM payments
+      WHERE payment_status = 'paid'
+      ` as any[];
+
+      const totalRevenue = Number(revenueResult[0]?.total) || 0;
 
       return NextResponse.json({
         homestays: {
@@ -85,7 +83,7 @@ export async function GET() {
           change: 0
         },
         revenue: {
-          total: Number(revenueStats._sum?.amount) || 0,
+          total: totalRevenue,
           thisMonth: 0, // Simplificado por ahora
           lastMonth: 0, // Simplificado por ahora
           change: 0

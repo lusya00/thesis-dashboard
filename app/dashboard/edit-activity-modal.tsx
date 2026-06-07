@@ -929,7 +929,7 @@ export function EditActivityModal({ activity, onSuccess }: EditActivityModalProp
                   <div>
                     <Label className="text-sm font-medium">Upload New Images</Label>
                     <ImageUpload
-                      onImagesChange={setActivityImages}
+                      onImagesChange={(images) => setActivityImages(images as any)}
                       maxImages={10}
                       disabled={loading}
                     />
